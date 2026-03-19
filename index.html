@@ -2,7 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Anlagenapp">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0c0f">
 <title>ANLAGENÜBERWACHUNG — Kran & Kalmar</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -248,9 +253,9 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
   position: fixed;
   bottom: 0; left: 0; right: 0;
   background: var(--surface);
-  border-top: 2px solid var(--border);
+  border-top: 1px solid var(--border);
   z-index: 200;
-  padding: 0;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .mobile-nav-inner {
   display: flex;
@@ -262,7 +267,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 10px 6px 14px;
+  padding: 10px 6px 12px;
   font-family: var(--mono);
   font-size: 9px;
   color: var(--text2);
@@ -273,20 +278,94 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
   border: none;
   background: none;
   transition: color .15s;
-  border-top: 2px solid transparent;
-  margin-top: -2px;
+  -webkit-tap-highlight-color: transparent;
 }
-.mobile-nav-item.active { color: var(--accent); border-top-color: var(--accent); }
-.mobile-nav-icon { font-size: 20px; }
+.mobile-nav-item.active { color: var(--accent); }
+.mobile-nav-item.active .mobile-nav-icon { filter: drop-shadow(0 0 4px var(--accent)); }
+.mobile-nav-icon { font-size: 22px; line-height: 1; }
+
+/* MOBILE HEADER */
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  align-items: center;
+  padding: 0 16px;
+  padding-top: env(safe-area-inset-top);
+  justify-content: space-between;
+}
+.mobile-header-title {
+  font-family: var(--display);
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.mobile-user-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-tap-highlight-color: transparent;
+}
 
 @media(max-width:768px){
-  .main-grid { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
-  .stats-row { grid-template-columns: repeat(2,1fr); }
-  header { padding: 0 14px; }
-  .content { padding: 16px 14px 80px; }
+  /* Hide desktop elements */
+  header { display: none !important; }
+  .sidebar { display: none !important; }
+  .login-left { display: none; }
+  .login-wrap { grid-template-columns: 1fr; }
+
+  /* Show mobile elements */
   .mobile-nav { display: block; }
-  .logo-sub { display: none; }
+  .mobile-header { display: flex; }
+
+  /* Full screen app layout */
+  html, body { height: 100%; overflow: hidden; }
+  #appScreen { height: 100%; display: flex; flex-direction: column; }
+  .main-grid {
+    grid-template-columns: 1fr;
+    flex: 1;
+    overflow: hidden;
+    margin-top: 56px;
+    margin-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+  .content {
+    padding: 16px 14px;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Cards full width */
+  .device-grid { grid-template-columns: 1fr; gap: 10px; }
+  .stats-row { grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .members-grid { grid-template-columns: 1fr; }
+
+  /* Log table scroll */
+  .log-table { font-size: 10px; }
+  .log-table th, .log-table td { padding: 7px 8px; }
+
+  /* Login box */
+  .login-right { padding: 24px 20px; align-items: flex-start; padding-top: 40px; }
+
+  /* Modals full screen on mobile */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 0;
+  }
 }
 
 textarea.form-input { min-height:90px; resize:vertical; line-height:1.6; }
@@ -342,6 +421,16 @@ select.form-input { cursor:pointer; }
 
 <!-- APP -->
 <div id="appScreen">
+<!-- MOBILE HEADER -->
+  <div class="mobile-header" id="mobileHeader">
+    <div class="mobile-header-title">⚙ ANLAGENAPP</div>
+    <button class="mobile-user-btn" onclick="logout()">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);display:inline-block"></span>
+      <span id="mobileUserName">—</span>
+      <span>✕</span>
+    </button>
+  </div>
+
   <header>
     <div class="logo">
       <div class="logo-hex">⚙</div>
@@ -704,6 +793,23 @@ async function showApp() {
   const name = currentProfile?.full_name || currentUser?.email || 'Demo';
   const role = roleLabel(currentProfile?.role || 'admin');
   document.getElementById('currentUserDisplay').textContent = name + ' · ' + role;
+  if (document.getElementById('mobileUserName')) {
+    document.getElementById('mobileUserName').textContent = name.split(' ')[0];
+  }
+
+  // Inject PWA manifest dynamically
+  const manifest = {
+    name: 'Anlagenüberwachung',
+    short_name: 'Anlagenapp',
+    start_url: window.location.href,
+    display: 'standalone',
+    background_color: '#0a0c0f',
+    theme_color: '#0a0c0f',
+    icons: [{ src: 'https://via.placeholder.com/192x192/f5a623/000000?text=A', sizes: '192x192', type: 'image/png' }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const manifestUrl = URL.createObjectURL(blob);
+  document.getElementById('manifestLink').href = manifestUrl;
 
   // Hide admin-only if not admin
   const isAdmin = (currentProfile?.role || 'admin') === 'admin';
