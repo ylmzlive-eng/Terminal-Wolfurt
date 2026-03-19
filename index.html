@@ -602,7 +602,7 @@ select.form-input { cursor:pointer; }
         <label class="form-label">Rolle</label>
         <select class="form-input" id="mRole">
           <option value="viewer">Betrachter — nur Ansicht</option>
-          <option value="technician">Techniker — kann Störungen melden</option>
+          <option value="technician">Kranfahrer & Staplerfahrer — kann Störungen melden</option>
           <option value="admin">Administrator — voller Zugriff</option>
         </select>
       </div>
@@ -1290,7 +1290,7 @@ function startClock() {
 //  UTILS
 // ════════════════════════════════════════════════════════════
 function sevLabel(s){ return {low:'Niedrig',medium:'Mittel',high:'Hoch'}[s]||s; }
-function roleLabel(r){ return {admin:'Admin',technician:'Techniker',viewer:'Betrachter'}[r]||r; }
+function roleLabel(r){ return {admin:'Administrator', technician:'Kranfahrer & Staplerfahrer', viewer:'Betrachter'}[r]||r; }
 function truncate(s,n){ return s&&s.length>n?s.substring(0,n)+'…':s||''; }
 function fmtDT(iso){ if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('de-AT')+' '+d.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}); }
 </script>
