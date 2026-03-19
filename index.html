@@ -330,8 +330,8 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
   .mobile-header { display: flex; }
 
   /* Full screen app layout */
-  html, body { height: 100%; overflow: hidden; }
-  #appScreen { height: 100%; display: flex; flex-direction: column; }
+  html, body { height: 100%; overflow: hidden; position: fixed; width: 100%; }
+  #appScreen { height: 100%; flex-direction: column; overflow: hidden; }
   .main-grid {
     grid-template-columns: 1fr;
     flex: 1;
@@ -789,7 +789,10 @@ async function loadProfile() {
 //  APP
 // ════════════════════════════════════════════════════════════
 async function showApp() {
-  document.getElementById('appScreen').style.display = 'block';
+  // Correct display mode depending on screen size
+  const isMobile = window.innerWidth <= 768;
+  document.getElementById('appScreen').style.display = isMobile ? 'flex' : 'block';
+
   const name = currentProfile?.full_name || currentUser?.email || 'Demo';
   const role = roleLabel(currentProfile?.role || 'admin');
   document.getElementById('currentUserDisplay').textContent = name + ' · ' + role;
@@ -808,16 +811,19 @@ async function showApp() {
     icons: [{ src: 'https://via.placeholder.com/192x192/f5a623/000000?text=A', sizes: '192x192', type: 'image/png' }]
   };
   const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const manifestUrl = URL.createObjectURL(blob);
-  document.getElementById('manifestLink').href = manifestUrl;
+  document.getElementById('manifestLink').href = URL.createObjectURL(blob);
 
   // Hide admin-only if not admin
   const isAdmin = (currentProfile?.role || 'admin') === 'admin';
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
 
   startClock();
+
+  // Load data and update UI
   await refreshAll();
-  setInterval(refreshAll, 30000);
+
+  // Auto-refresh every 30 seconds
+  setInterval(async () => { await refreshAll(); }, 30000);
 }
 
 async function refreshAll() {
