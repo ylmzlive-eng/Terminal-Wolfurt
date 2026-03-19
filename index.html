@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANLAGENÜBERWACHUNG — Kran & Kalmar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0c0f;
+  --surface: #111318;
+  --surface2: #181c23;
+  --surface3: #1e2330;
+  --border: #2a3045;
+  --accent: #f5a623;
+  --accent2: #e8421a;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --blue: #3b82f6;
+  --text: #e8eaf0;
+  --text2: #8892a4;
+  --text3: #4a5568;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --display: 'Bebas Neue', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.06) 2px,rgba(0,0,0,.06) 4px); pointer-events:none; z-index:9999; }
+
+/* LOADING */
+#loadingScreen { position:fixed; inset:0; background:var(--bg); z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+.loading-logo { font-family:var(--display); font-size:36px; letter-spacing:6px; color:var(--accent); }
+.loading-bar { width:200px; height:2px; background:var(--surface3); position:relative; overflow:hidden; }
+.loading-bar::after { content:''; position:absolute; left:-60%; width:60%; height:100%; background:var(--accent); animation:loadBar 1.2s infinite ease-in-out; }
+@keyframes loadBar { to { left:110%; } }
+.loading-sub { font-family:var(--mono); font-size:10px; color:var(--text3); letter-spacing:3px; }
+
+/* LOGIN */
+#loginScreen { position:fixed; inset:0; background:var(--bg); z-index:1000; display:none; align-items:center; justify-content:center; }
+.login-wrap { display:grid; grid-template-columns:1fr 420px; min-height:100vh; width:100%; }
+.login-left { background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; justify-content:flex-end; padding:48px; position:relative; overflow:hidden; }
+.login-left::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 30% 70%, rgba(245,166,35,.08) 0%, transparent 60%); }
+.login-big { font-family:var(--display); font-size:clamp(48px,7vw,96px); letter-spacing:4px; line-height:.95; color:var(--text); position:relative; z-index:1; }
+.login-big span { color:var(--accent); }
+.login-desc { font-family:var(--mono); font-size:11px; color:var(--text2); letter-spacing:2px; margin-top:20px; line-height:1.8; position:relative; z-index:1; max-width:380px; }
+.login-devices { display:flex; gap:10px; margin-top:32px; flex-wrap:wrap; position:relative; z-index:1; }
+.login-device-chip { background:var(--surface2); border:1px solid var(--border); padding:6px 14px; font-family:var(--mono); font-size:10px; color:var(--text2); letter-spacing:1px; }
+.login-right { display:flex; align-items:center; justify-content:center; padding:40px 48px; }
+.login-box { width:100%; }
+.login-title { font-family:var(--display); font-size:28px; letter-spacing:4px; margin-bottom:4px; }
+.login-sub { font-family:var(--mono); font-size:10px; color:var(--text2); letter-spacing:2px; margin-bottom:36px; }
+.form-group { margin-bottom:18px; }
+.form-label { font-family:var(--mono); font-size:10px; color:var(--text2); letter-spacing:2px; text-transform:uppercase; margin-bottom:7px; display:block; }
+.form-input { width:100%; background:var(--surface2); border:1px solid var(--border); padding:11px 14px; color:var(--text); font-family:var(--mono); font-size:13px; outline:none; transition:border-color .2s; }
+.form-input:focus { border-color:var(--accent); }
+.btn-primary { width:100%; background:var(--accent); border:none; padding:13px; color:#000; font-family:var(--display); font-size:20px; letter-spacing:3px; cursor:pointer; transition:opacity .2s,transform .1s; margin-top:4px; }
+.btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+.btn-primary:active { transform:translateY(0); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.login-error { font-family:var(--mono); font-size:11px; color:var(--red); margin-top:12px; display:none; padding:10px 14px; border:1px solid rgba(239,68,68,.3); background:rgba(239,68,68,.06); }
+.login-ver { font-family:var(--mono); font-size:9px; color:var(--text3); margin-top:24px; letter-spacing:1px; }
+
+/* HEADER */
+header { background:var(--surface); border-bottom:2px solid var(--border); padding:0 28px; display:flex; align-items:center; justify-content:space-between; height:60px; position:sticky; top:0; z-index:100; }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-hex { width:32px; height:32px; background:var(--accent); clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); display:flex; align-items:center; justify-content:center; font-size:14px; }
+.logo-text { font-family:var(--display); font-size:20px; letter-spacing:3px; }
+.logo-sub { font-family:var(--mono); font-size:9px; color:var(--text2); letter-spacing:2px; margin-top:-2px; }
+.header-right { display:flex; align-items:center; gap:16px; }
+.htime { font-family:var(--mono); font-size:11px; color:var(--text2); }
+.user-pill { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); padding:5px 12px; font-family:var(--mono); font-size:11px; cursor:pointer; transition:border-color .15s; }
+.user-pill:hover { border-color:var(--red); }
+.udot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+
+/* LAYOUT */
+#appScreen { display:none; }
+.main-grid { display:grid; grid-template-columns:240px 1fr; min-height:calc(100vh - 60px); }
+.sidebar { background:var(--surface); border-right:1px solid var(--border); padding:20px 0; display:flex; flex-direction:column; }
+.sb-section { padding:0 16px; margin-bottom:28px; }
+.sb-label { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:3px; margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid var(--border); }
+.nav-item { display:flex; align-items:center; gap:10px; padding:8px 10px; font-family:var(--mono); font-size:11px; color:var(--text2); cursor:pointer; transition:all .15s; border:1px solid transparent; margin-bottom:1px; }
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:var(--surface3); border-color:var(--border); color:var(--accent); }
+.nav-icon { width:16px; text-align:center; font-size:13px; }
+.sb-stats { background:var(--surface2); border:1px solid var(--border); padding:14px; margin:0 16px; }
+.sb-stat { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; font-family:var(--mono); font-size:10px; }
+.sb-stat:last-child { margin-bottom:0; }
+.sb-key { color:var(--text2); }
+.sb-val { font-weight:600; font-size:12px; }
+.content { padding:24px 28px; overflow-y:auto; }
+.page { display:none; }
+.page.active { display:block; }
+.page-title { font-family:var(--display); font-size:26px; letter-spacing:3px; margin-bottom:3px; }
+.page-sub { font-family:var(--mono); font-size:10px; color:var(--text2); letter-spacing:1px; margin-bottom:24px; }
+
+/* STATS ROW */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); padding:16px 18px; position:relative; overflow:hidden; }
+.stat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; }
+.stat-card.s-blue::after { background:var(--blue); }
+.stat-card.s-green::after { background:var(--green); }
+.stat-card.s-red::after { background:var(--red); }
+.stat-card.s-orange::after { background:var(--accent); }
+.stat-num { font-family:var(--display); font-size:40px; line-height:1; margin-bottom:4px; }
+.stat-desc { font-family:var(--mono); font-size:9px; color:var(--text2); letter-spacing:2px; text-transform:uppercase; }
+
+/* DEVICE GRID */
+.device-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; margin-bottom:24px; }
+.device-card { background:var(--surface); border:1px solid var(--border); overflow:hidden; transition:border-color .2s,transform .15s; }
+.device-card:hover { transform:translateY(-2px); border-color:var(--accent); }
+.device-card.fault { border-color:var(--red); animation:faultAnim 3s infinite; }
+@keyframes faultAnim { 0%,100%{box-shadow:0 0 16px rgba(239,68,68,.15)}50%{box-shadow:0 0 28px rgba(239,68,68,.3)} }
+.dc-head { padding:13px 16px 11px; display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); }
+.type-badge { font-family:var(--mono); font-size:9px; letter-spacing:2px; padding:2px 7px; border:1px solid; margin-bottom:5px; display:inline-block; }
+.badge-crane { color:var(--accent); border-color:var(--accent); background:rgba(245,166,35,.07); }
+.badge-kalmar { color:var(--blue); border-color:var(--blue); background:rgba(59,130,246,.07); }
+.dc-name { font-family:var(--display); font-size:20px; letter-spacing:2px; line-height:1; }
+.dc-id { font-family:var(--mono); font-size:9px; color:var(--text2); margin-top:2px; }
+.status-ind { display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; }
+.sdot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.sdot-ok { background:var(--green); box-shadow:0 0 7px var(--green); }
+.sdot-fault { background:var(--red); box-shadow:0 0 7px var(--red); animation:pulse 1.5s infinite; }
+.dc-body { padding:12px 16px; }
+.dc-row { display:flex; justify-content:space-between; margin-bottom:7px; font-family:var(--mono); font-size:10px; }
+.dc-row:last-child { margin-bottom:0; }
+.dk { color:var(--text2); }
+.dv { color:var(--text); font-weight:500; }
+.fault-banner { background:rgba(239,68,68,.1); border-top:1px solid rgba(239,68,68,.25); padding:9px 16px; font-family:var(--mono); font-size:10px; color:var(--red); display:flex; gap:7px; align-items:flex-start; }
+.dc-actions { padding:9px 16px; border-top:1px solid var(--border); display:flex; gap:8px; }
+.btn-report-sm { flex:1; background:none; border:1px solid var(--red); color:var(--red); padding:7px; font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; transition:background .15s; }
+.btn-report-sm:hover { background:rgba(239,68,68,.1); }
+.btn-resolve-sm { flex:1; background:none; border:1px solid var(--green); color:var(--green); padding:7px; font-family:var(--mono); font-size:10px; cursor:pointer; transition:background .15s; }
+.btn-resolve-sm:hover { background:rgba(34,197,94,.1); }
+
+/* LOG */
+.log-controls { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.log-search { flex:1; min-width:200px; background:var(--surface); border:1px solid var(--border); padding:8px 12px; color:var(--text); font-family:var(--mono); font-size:11px; outline:none; }
+.log-search:focus { border-color:var(--accent); }
+.log-filter { background:var(--surface); border:1px solid var(--border); padding:8px 12px; color:var(--text2); font-family:var(--mono); font-size:11px; outline:none; cursor:pointer; }
+.log-filter:focus { border-color:var(--accent); }
+.log-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+.log-table th { background:var(--surface2); border:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text2); letter-spacing:1px; font-weight:500; text-transform:uppercase; font-size:9px; white-space:nowrap; }
+.log-table td { border:1px solid var(--border); padding:9px 12px; color:var(--text); vertical-align:middle; }
+.log-table tr:hover td { background:var(--surface2); }
+.sev-tag { display:inline-block; padding:2px 7px; font-size:9px; letter-spacing:1px; text-transform:uppercase; border:1px solid; font-weight:600; white-space:nowrap; }
+.sev-low { color:var(--yellow); border-color:var(--yellow); }
+.sev-medium { color:var(--accent); border-color:var(--accent); }
+.sev-high { color:var(--red); border-color:var(--red); }
+.btn-detail { background:none; border:1px solid var(--border); color:var(--text2); padding:3px 9px; font-family:var(--mono); font-size:9px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.btn-detail:hover { border-color:var(--accent); color:var(--accent); }
+.btn-res-log { background:none; border:1px solid var(--green); color:var(--green); padding:3px 9px; font-family:var(--mono); font-size:9px; cursor:pointer; white-space:nowrap; }
+.btn-res-log:hover { background:rgba(34,197,94,.1); }
+
+/* MEMBERS */
+.members-controls { display:flex; gap:10px; margin-bottom:20px; align-items:center; }
+.btn-add-member { background:var(--accent); border:none; color:#000; padding:9px 18px; font-family:var(--display); font-size:16px; letter-spacing:2px; cursor:pointer; transition:opacity .15s; }
+.btn-add-member:hover { opacity:.85; }
+.members-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.member-card { background:var(--surface); border:1px solid var(--border); padding:16px 18px; display:flex; align-items:center; gap:14px; position:relative; }
+.member-avatar { width:42px; height:42px; background:var(--surface3); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:var(--display); font-size:17px; color:var(--accent); flex-shrink:0; }
+.member-name { font-size:14px; font-weight:600; margin-bottom:2px; }
+.member-email { font-family:var(--mono); font-size:10px; color:var(--text2); margin-bottom:4px; }
+.member-role { font-family:var(--mono); font-size:9px; letter-spacing:1px; text-transform:uppercase; }
+.role-admin { color:var(--accent); }
+.role-technician { color:var(--blue); }
+.role-viewer { color:var(--text2); }
+.member-actions { position:absolute; top:10px; right:12px; display:flex; gap:6px; }
+.btn-del { background:none; border:none; color:var(--text3); font-size:14px; cursor:pointer; padding:2px 5px; transition:color .15s; }
+.btn-del:hover { color:var(--red); }
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--border); width:100%; max-width:600px; max-height:92vh; overflow-y:auto; position:relative; }
+.modal-top-bar { height:3px; background:linear-gradient(90deg,var(--accent2),var(--red)); }
+.modal-header { padding:22px 26px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; }
+.modal-title { font-family:var(--display); font-size:22px; letter-spacing:2px; }
+.modal-sub { font-family:var(--mono); font-size:10px; color:var(--text2); margin-top:3px; }
+.btn-close { background:none; border:1px solid var(--border); color:var(--text2); width:30px; height:30px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0; }
+.btn-close:hover { border-color:var(--red); color:var(--red); }
+.modal-body { padding:22px 26px; }
+.modal-footer { padding:18px 26px 22px; display:flex; gap:10px; border-top:1px solid var(--border); }
+.btn-cancel { flex:1; background:none; border:1px solid var(--border); color:var(--text2); padding:10px; font-family:var(--mono); font-size:11px; cursor:pointer; transition:all .15s; }
+.btn-cancel:hover { border-color:var(--text); color:var(--text); }
+.btn-submit { flex:2; background:var(--red); border:none; color:#fff; padding:10px; font-family:var(--display); font-size:17px; letter-spacing:2px; cursor:pointer; transition:opacity .15s; }
+.btn-submit:hover { opacity:.85; }
+.btn-submit:disabled { opacity:.5; cursor:not-allowed; }
+.btn-submit-blue { background:var(--blue); }
+
+/* SEVERITY */
+.sev-sel { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:18px; }
+.sev-btn { padding:9px 6px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; cursor:pointer; text-align:center; transition:all .15s; }
+.sev-btn:hover { color:var(--text); border-color:var(--text2); }
+.sev-btn.active.low { border-color:var(--yellow); background:rgba(245,158,11,.1); color:var(--yellow); }
+.sev-btn.active.medium { border-color:var(--accent); background:rgba(245,166,35,.1); color:var(--accent); }
+.sev-btn.active.high { border-color:var(--red); background:rgba(239,68,68,.1); color:var(--red); }
+
+/* UPLOAD */
+.upload-area { border:2px dashed var(--border); padding:28px; text-align:center; cursor:pointer; transition:border-color .2s; position:relative; margin-bottom:18px; }
+.upload-area:hover { border-color:var(--accent); }
+.upload-area input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.upload-icon { font-size:28px; margin-bottom:6px; }
+.upload-txt { font-family:var(--mono); font-size:11px; color:var(--text2); }
+.photo-previews { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+.photo-thumb { width:76px; height:76px; object-fit:cover; border:1px solid var(--border); }
+
+/* ALERT TOASTS */
+.alert-wrap { position:fixed; top:72px; right:18px; z-index:600; display:flex; flex-direction:column; gap:7px; max-width:320px; }
+.toast { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--red); padding:11px 14px; font-family:var(--mono); font-size:11px; animation:toastIn .3s ease-out; box-shadow:0 4px 20px rgba(0,0,0,.4); }
+.toast.t-green { border-left-color:var(--green); }
+.toast-title { font-weight:600; letter-spacing:1px; margin-bottom:3px; }
+.toast.t-red .toast-title { color:var(--red); }
+.toast.t-green .toast-title { color:var(--green); }
+.toast-body { color:var(--text2); line-height:1.5; }
+@keyframes toastIn { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* DETAIL VIEW */
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; }
+.detail-field .form-label { margin-bottom:5px; }
+.detail-val { font-family:var(--mono); font-size:12px; line-height:1.5; }
+.detail-val.muted { color:var(--text2); }
+.detail-desc { background:var(--surface2); border:1px solid var(--border); padding:13px; font-family:var(--mono); font-size:12px; line-height:1.7; margin-bottom:16px; }
+.detail-photos { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+.detail-photo { width:110px; height:80px; object-fit:cover; border:1px solid var(--border); cursor:pointer; transition:border-color .15s; }
+.detail-photo:hover { border-color:var(--accent); }
+.status-box { padding:12px 14px; font-family:var(--mono); font-size:11px; margin-bottom:16px; border:1px solid; }
+.status-box.open { color:var(--red); border-color:rgba(239,68,68,.3); background:rgba(239,68,68,.06); }
+.status-box.resolved { color:var(--green); border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.06); }
+
+/* SPINNER */
+.spinner { width:16px; height:16px; border:2px solid rgba(0,0,0,.3); border-top-color:#000; border-radius:50%; animation:spin .6s linear infinite; display:inline-block; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* SETUP BANNER */
+.setup-banner { background:rgba(245,166,35,.08); border:1px solid rgba(245,166,35,.3); padding:16px 20px; font-family:var(--mono); font-size:11px; line-height:1.8; margin-bottom:24px; }
+.setup-banner strong { color:var(--accent); }
+
+/* EMPTY STATE */
+.empty-state { text-align:center; padding:48px 20px; font-family:var(--mono); font-size:12px; color:var(--text3); }
+.empty-icon { font-size:36px; margin-bottom:12px; opacity:.4; }
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .login-wrap { grid-template-columns:1fr; }
+  .login-left { display:none; }
+  .main-grid { grid-template-columns:1fr; }
+  .sidebar { display:none; }
+  .stats-row { grid-template-columns:repeat(2,1fr); }
+  header { padding:0 14px; }
+  .content { padding:16px 14px; }
+}
+
+textarea.form-input { min-height:90px; resize:vertical; line-height:1.6; }
+select.form-input { cursor:pointer; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="loading-logo">ANLAGENAPP</div>
+  <div class="loading-bar"></div>
+  <div class="loading-sub">SYSTEM WIRD GELADEN ...</div>
+</div>
+
+<!-- ALERTS -->
+<div class="alert-wrap" id="alertWrap"></div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-left">
+      <div class="login-big">ANLAGEN<br><span>ÜBER</span><br>WACHUNG</div>
+      <div class="login-desc">Professionelles Störungsmanagement für Krane und Kalmar Champ Geräte. Echtzeit-Statusüberwachung, Foto-Dokumentation und vollständiges Störungsprotokoll.</div>
+      <div class="login-devices">
+        <div class="login-device-chip">⬡ KRAN 01</div>
+        <div class="login-device-chip">⬡ KRAN 02</div>
+        <div class="login-device-chip">◈ KALMAR 01</div>
+        <div class="login-device-chip">◈ KALMAR 02</div>
+        <div class="login-device-chip">◈ KALMAR 03</div>
+        <div class="login-device-chip">◈ KALMAR 04</div>
+      </div>
+    </div>
+    <div class="login-right">
+      <div class="login-box">
+        <div class="login-title">ANMELDEN</div>
+        <div class="login-sub">Bitte E-Mail und Passwort eingeben</div>
+        <div class="form-group">
+          <label class="form-label">E-Mail Adresse</label>
+          <input type="email" class="form-input" id="loginEmail" placeholder="name@firma.at" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Passwort</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="loginBtn" onclick="doLogin()">ANMELDEN</button>
+        <div class="login-error" id="loginError"></div>
+        <div class="login-ver">v3.0.0 · Anlagenüberwachungssystem · © 2025</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <header>
+    <div class="logo">
+      <div class="logo-hex">⚙</div>
+      <div>
+        <div class="logo-text">ANLAGENÜBERWACHUNG</div>
+        <div class="logo-sub">KRAN & KALMAR MANAGEMENT</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="htime" id="htime"></div>
+      <div class="user-pill" onclick="logout()">
+        <div class="udot"></div>
+        <span id="currentUserDisplay">—</span>
+        <span style="color:var(--text3);font-size:12px">✕</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <aside class="sidebar">
+      <div class="sb-section">
+        <div class="sb-label">Navigation</div>
+        <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">▦</span> Dashboard</div>
+        <div class="nav-item" onclick="showPage('devices')" id="nav-devices"><span class="nav-icon">⚙</span> Geräte</div>
+        <div class="nav-item" onclick="showPage('log')" id="nav-log"><span class="nav-icon">≡</span> Störungslog</div>
+        <div class="nav-item admin-only" onclick="showPage('members')" id="nav-members"><span class="nav-icon">◉</span> Mitglieder</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Systemstatus</div>
+        <div class="sb-stats">
+          <div class="sb-stat"><span class="sb-key">Geräte gesamt</span><span class="sb-val">6</span></div>
+          <div class="sb-stat"><span class="sb-key">In Betrieb</span><span class="sb-val" style="color:var(--green)" id="sb-ok">—</span></div>
+          <div class="sb-stat"><span class="sb-key">Aktive Störungen</span><span class="sb-val" style="color:var(--red)" id="sb-faults">—</span></div>
+          <div class="sb-stat"><span class="sb-key">Gesamt Meldungen</span><span class="sb-val" style="color:var(--text2)" id="sb-total-log">—</span></div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="sb-section" style="margin-bottom:0">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:1px;line-height:1.7" id="supabaseStatus"></div>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">DASHBOARD</div>
+        <div class="page-sub">Echtzeit-Übersicht · automatische Aktualisierung alle 30 Sekunden</div>
+        <div id="setupBanner"></div>
+        <div class="stats-row">
+          <div class="stat-card s-blue"><div class="stat-num" style="color:var(--blue)">6</div><div class="stat-desc">Geräte gesamt</div></div>
+          <div class="stat-card s-green"><div class="stat-num" style="color:var(--green)" id="d-ok">—</div><div class="stat-desc">In Betrieb</div></div>
+          <div class="stat-card s-red"><div class="stat-num" style="color:var(--red)" id="d-faults">—</div><div class="stat-desc">Aktive Störungen</div></div>
+          <div class="stat-card s-orange"><div class="stat-num" style="color:var(--accent)" id="d-resolved">—</div><div class="stat-desc">Behobene Störungen</div></div>
+        </div>
+        <div class="page-sub" style="margin-bottom:14px">— GERÄTESTATUS —</div>
+        <div class="device-grid" id="dash-grid"></div>
+      </div>
+
+      <!-- DEVICES -->
+      <div class="page" id="page-devices">
+        <div class="page-title">GERÄTE</div>
+        <div class="page-sub">Alle 6 verwalteten Geräte · 2 Brückenkrane · 4 Kalmar Champ</div>
+        <div class="device-grid" id="dev-grid"></div>
+      </div>
+
+      <!-- LOG -->
+      <div class="page" id="page-log">
+        <div class="page-title">STÖRUNGSLOG</div>
+        <div class="page-sub">Vollständiges Protokoll aller Störungsmeldungen</div>
+        <div class="log-controls">
+          <input type="text" class="log-search" id="logSearch" placeholder="Suche..." oninput="renderLog()">
+          <select class="log-filter" id="logDev" onchange="renderLog()">
+            <option value="">Alle Geräte</option>
+            <option value="KRN-01">Kran 01</option>
+            <option value="KRN-02">Kran 02</option>
+            <option value="KCH-01">Kalmar 01</option>
+            <option value="KCH-02">Kalmar 02</option>
+            <option value="KCH-03">Kalmar 03</option>
+            <option value="KCH-04">Kalmar 04</option>
+          </select>
+          <select class="log-filter" id="logSev" onchange="renderLog()">
+            <option value="">Alle Schweregrade</option>
+            <option value="low">Niedrig</option>
+            <option value="medium">Mittel</option>
+            <option value="high">Hoch</option>
+          </select>
+          <select class="log-filter" id="logStatus" onchange="renderLog()">
+            <option value="">Alle Status</option>
+            <option value="open">Offen</option>
+            <option value="resolved">Behoben</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="log-table">
+            <thead><tr>
+              <th>ID</th><th>Zeitstempel</th><th>Gerät</th><th>Schweregrad</th>
+              <th>Beschreibung</th><th>Gemeldet von</th><th>Fotos</th><th>Status</th><th>Aktionen</th>
+            </tr></thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MEMBERS (Admin only) -->
+      <div class="page admin-only" id="page-members">
+        <div class="page-title">MITGLIEDER</div>
+        <div class="page-sub">Benutzerverwaltung · nur für Administratoren</div>
+        <div class="members-controls">
+          <button class="btn-add-member" onclick="openAddMember()">＋ MITGLIED HINZUFÜGEN</button>
+        </div>
+        <div class="members-grid" id="membersGrid"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal">
+    <div class="modal-top-bar"></div>
+    <div class="modal-header">
+      <div><div class="modal-title">STÖRUNG MELDEN</div><div class="modal-sub" id="reportDeviceName">—</div></div>
+      <button class="btn-close" onclick="closeModal('reportModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Schweregrad</label>
+        <div class="sev-sel">
+          <div class="sev-btn low" onclick="setSev('low',this)">⚠ NIEDRIG</div>
+          <div class="sev-btn medium active medium" onclick="setSev('medium',this)">⚡ MITTEL</div>
+          <div class="sev-btn high" onclick="setSev('high',this)">🚨 HOCH</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Störungsbeschreibung *</label>
+        <textarea class="form-input" id="faultDesc" placeholder="Beschreiben Sie die Störung detailliert: Was ist aufgetreten? Seit wann? Welche Auswirkungen hat die Störung?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fotos der Störung</label>
+        <div class="upload-area" id="uploadArea">
+          <input type="file" accept="image/*" multiple onchange="handlePhotos(event)" id="photoInput">
+          <div class="upload-icon">📷</div>
+          <div class="upload-txt">FOTOS ABLEGEN ODER KLICKEN<br><span style="color:var(--text3)">JPG · PNG · HEIC · mehrere möglich</span></div>
+        </div>
+        <div class="photo-previews" id="photoPreviews"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sofortmaßnahmen (optional)</label>
+        <input type="text" class="form-input" id="faultAction" placeholder="z.B. Gerät stillgelegt, Bereich gesperrt, Techniker verständigt...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('reportModal')">ABBRECHEN</button>
+      <button class="btn-submit" id="reportSubmitBtn" onclick="submitReport()">STÖRUNG EINREICHEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-top-bar" style="background:linear-gradient(90deg,var(--blue),var(--accent))"></div>
+    <div class="modal-header">
+      <div><div class="modal-title">STÖRUNGSDETAIL</div><div class="modal-sub" id="detailId">—</div></div>
+      <button class="btn-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer" id="detailFooter">
+      <button class="btn-cancel" onclick="closeModal('detailModal')">SCHLIESSEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-top-bar" style="background:linear-gradient(90deg,var(--blue),var(--green))"></div>
+    <div class="modal-header">
+      <div><div class="modal-title">MITGLIED HINZUFÜGEN</div><div class="modal-sub">Neuen Benutzer anlegen</div></div>
+      <button class="btn-close" onclick="closeModal('memberModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Vollständiger Name *</label><input type="text" class="form-input" id="mName" placeholder="Max Mustermann"></div>
+      <div class="form-group"><label class="form-label">E-Mail Adresse *</label><input type="email" class="form-input" id="mEmail" placeholder="max@firma.at"></div>
+      <div class="form-group"><label class="form-label">Passwort *</label><input type="password" class="form-input" id="mPassword" placeholder="Mindestens 8 Zeichen"></div>
+      <div class="form-group">
+        <label class="form-label">Rolle</label>
+        <select class="form-input" id="mRole">
+          <option value="viewer">Betrachter — nur Ansicht</option>
+          <option value="technician">Techniker — kann Störungen melden</option>
+          <option value="admin">Administrator — voller Zugriff</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('memberModal')">ABBRECHEN</button>
+      <button class="btn-submit btn-submit-blue" id="memberSubmitBtn" onclick="submitMember()">MITGLIED ANLEGEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUPABASE SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  ⚙️  KONFIGURATION — hier Ihre Supabase-Daten eintragen
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://ifyamipkhzlbmnpyhxii.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmeWFtaXBraHpsYm1ucHloeGlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MjQ1MTMsImV4cCI6MjA4OTUwMDUxM30.-w6MwZg8JPcRUQQdNt0wVkr-ca6gBBfnJk4eLd_00M8';
+
+// ════════════════════════════════════════════════════════════
+//  GERÄTE-DEFINITION
+// ════════════════════════════════════════════════════════════
+const DEVICES = [
+  { id:'KRN-01', name:'KRAN 01',   type:'crane',  badge:'badge-crane',  badgeText:'BRÜCKENKRAN',  location:'Halle A',         capacity:'20t', yearBuilt:2018, lastService:'12.01.2025' },
+  { id:'KRN-02', name:'KRAN 02',   type:'crane',  badge:'badge-crane',  badgeText:'BRÜCKENKRAN',  location:'Halle B',         capacity:'32t', yearBuilt:2019, lastService:'08.02.2025' },
+  { id:'KCH-01', name:'KALMAR 01', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Außengelände N',  capacity:'8t',  yearBuilt:2021, lastService:'15.01.2025' },
+  { id:'KCH-02', name:'KALMAR 02', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Außengelände S',  capacity:'8t',  yearBuilt:2021, lastService:'20.01.2025' },
+  { id:'KCH-03', name:'KALMAR 03', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Lagerhalle Ost',  capacity:'10t', yearBuilt:2022, lastService:'02.02.2025' },
+  { id:'KCH-04', name:'KALMAR 04', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Lagerhalle West', capacity:'10t', yearBuilt:2022, lastService:'05.02.2025' },
+];
+
+// ════════════════════════════════════════════════════════════
+//  INIT SUPABASE
+// ════════════════════════════════════════════════════════════
+let sb = null;
+let configured = false;
+
+function initSupabase() {
+  if (SUPABASE_URL === 'IHRE_SUPABASE_URL') {
+    configured = false;
+    document.getElementById('supabaseStatus').textContent = '⚠ Supabase nicht konfiguriert\nSiehe setup.md';
+    return false;
+  }
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    configured = true;
+    document.getElementById('supabaseStatus').textContent = '● Supabase verbunden';
+    return true;
+  } catch(e) {
+    configured = false;
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════════
+let currentUser = null;
+let currentProfile = null;
+let faultLog = [];
+let members = [];
+let selectedDevice = null;
+let selectedSev = 'medium';
+let uploadedPhotos = [];
+
+// ════════════════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════════════════
+window.addEventListener('load', async () => {
+  initSupabase();
+  await new Promise(r => setTimeout(r, 1200));
+  document.getElementById('loadingScreen').style.display = 'none';
+
+  if (!configured) {
+    // Demo mode
+    showSetupBanner();
+    showLogin();
+    return;
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+    showApp();
+  } else {
+    showLogin();
+  }
+});
+
+function showLogin() { document.getElementById('loginScreen').style.display = 'flex'; }
+function hideLogin() { document.getElementById('loginScreen').style.display = 'none'; }
+
+function showSetupBanner() {
+  document.getElementById('setupBanner').innerHTML = `
+    <div class="setup-banner">
+      <strong>⚙ EINRICHTUNG ERFORDERLICH</strong><br>
+      Öffnen Sie die Datei <strong>index.html</strong> in einem Texteditor und tragen Sie Ihre Supabase-URL und den API-Key ein.<br>
+      Führen Sie dann das SQL aus <strong>setup.sql</strong> in Ihrem Supabase-Dashboard aus.<br>
+      Detaillierte Anleitung: <strong>ANLEITUNG.md</strong>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  AUTH
+// ════════════════════════════════════════════════════════════
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!email || !pass) { showErr('Bitte E-Mail und Passwort eingeben.'); return; }
+
+  if (!configured) {
+    // Demo login
+    currentProfile = { full_name: 'Demo Benutzer', role: 'admin', email };
+    hideLogin();
+    showApp();
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>ANMELDEN...';
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  btn.disabled = false;
+  btn.innerHTML = 'ANMELDEN';
+
+  if (error) { showErr('Anmeldung fehlgeschlagen: ' + (error.message === 'Invalid login credentials' ? 'Ungültige Zugangsdaten.' : error.message)); return; }
+
+  currentUser = data.user;
+  await loadProfile();
+  hideLogin();
+  showApp();
+}
+
+function showErr(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function logout() {
+  if (sb) await sb.auth.signOut();
+  currentUser = null; currentProfile = null; faultLog = []; members = [];
+  document.getElementById('appScreen').style.display = 'none';
+  showLogin();
+}
+
+async function loadProfile() {
+  if (!sb || !currentUser) return;
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+}
+
+// ════════════════════════════════════════════════════════════
+//  APP
+// ════════════════════════════════════════════════════════════
+async function showApp() {
+  document.getElementById('appScreen').style.display = 'block';
+  const name = currentProfile?.full_name || currentUser?.email || 'Demo';
+  const role = roleLabel(currentProfile?.role || 'admin');
+  document.getElementById('currentUserDisplay').textContent = name + ' · ' + role;
+
+  // Hide admin-only if not admin
+  const isAdmin = (currentProfile?.role || 'admin') === 'admin';
+  document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+
+  startClock();
+  await refreshAll();
+  setInterval(refreshAll, 30000);
+}
+
+async function refreshAll() {
+  await loadFaults();
+  renderDevices();
+  renderLog();
+  updateStats();
+  if ((currentProfile?.role || 'admin') === 'admin') await loadMembers();
+}
+
+// ════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'members') renderMembers();
+}
+
+// ════════════════════════════════════════════════════════════
+//  FAULTS — LOAD
+// ════════════════════════════════════════════════════════════
+async function loadFaults() {
+  if (!sb) {
+    // demo data
+    faultLog = [
+      { id:'F-001', device_id:'KRN-01', created_at:new Date().toISOString(), severity:'high', description:'Hydraulikdruckabfall am Hauptzylinder. Fehler E-47 im Panel.', reported_by_name:'Demo Techniker', immediate_action:'Gerät stillgelegt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
+      { id:'F-002', device_id:'KCH-02', created_at:new Date(Date.now()-86400000).toISOString(), severity:'medium', description:'Geräusch im Antriebsstrang bei Volllast.', reported_by_name:'Demo Admin', immediate_action:'Last auf 50% begrenzt', photos:[], resolved:true, resolved_at:new Date().toISOString(), resolved_by_name:'Demo Admin' },
+    ];
+    return;
+  }
+  const { data } = await sb.from('faults').select('*').order('created_at', { ascending: false });
+  faultLog = data || [];
+}
+
+// ════════════════════════════════════════════════════════════
+//  FAULTS — DEVICE CARDS
+// ════════════════════════════════════════════════════════════
+function getActiveFault(deviceId) { return faultLog.find(f => f.device_id === deviceId && !f.resolved) || null; }
+function hasFault(deviceId) { return !!getActiveFault(deviceId); }
+
+function renderDevices() {
+  ['dash-grid','dev-grid'].forEach(gid => {
+    const grid = document.getElementById(gid);
+    grid.innerHTML = '';
+    DEVICES.forEach(d => grid.appendChild(buildDeviceCard(d)));
+  });
+}
+
+function buildDeviceCard(d) {
+  const fault = getActiveFault(d.id);
+  const canReport = canUserReport();
+  const card = document.createElement('div');
+  card.className = 'device-card' + (fault ? ' fault' : '');
+
+  const dotClass = fault ? 'sdot-fault' : 'sdot-ok';
+  const statusText = fault ? 'STÖRUNG' : 'IN BETRIEB';
+  const statusColor = fault ? 'var(--red)' : 'var(--green)';
+
+  card.innerHTML = `
+    <div class="dc-head">
+      <div>
+        <span class="type-badge ${d.badge}">${d.badgeText}</span>
+        <div class="dc-name">${d.name}</div>
+        <div class="dc-id">${d.id} · ${d.location}</div>
+      </div>
+      <div class="status-ind" style="color:${statusColor}">
+        <div class="sdot ${dotClass}"></div>${statusText}
+      </div>
+    </div>
+    <div class="dc-body">
+      <div class="dc-row"><span class="dk">Tragfähigkeit</span><span class="dv">${d.capacity}</span></div>
+      <div class="dc-row"><span class="dk">Baujahr</span><span class="dv">${d.yearBuilt}</span></div>
+      <div class="dc-row"><span class="dk">Letzte Wartung</span><span class="dv">${d.lastService}</span></div>
+    </div>
+    ${fault ? `<div class="fault-banner">⚠ ${truncate(fault.description,70)}</div>` : ''}
+    ${canReport ? `<div class="dc-actions">
+      ${!fault ? `<button class="btn-report-sm" onclick="openReportModal('${d.id}')">＋ STÖRUNG MELDEN</button>` : ''}
+      ${fault ? `<button class="btn-resolve-sm" onclick="resolveDevice('${d.id}')">✓ STÖRUNG BEHEBEN</button>` : ''}
+    </div>` : ''}
+  `;
+  return card;
+}
+
+function canUserReport() {
+  const role = currentProfile?.role || 'admin';
+  return role === 'admin' || role === 'technician';
+}
+
+// ════════════════════════════════════════════════════════════
+//  REPORT MODAL
+// ════════════════════════════════════════════════════════════
+function openReportModal(deviceId) {
+  if (!canUserReport()) { toast('Kein Zugriff','Ihre Rolle erlaubt keine Störungsmeldungen.','red'); return; }
+  selectedDevice = deviceId;
+  selectedSev = 'medium';
+  uploadedPhotos = [];
+  const d = DEVICES.find(x => x.id === deviceId);
+  document.getElementById('reportDeviceName').textContent = d.name + ' · ' + d.id + ' · ' + d.location;
+  document.getElementById('faultDesc').value = '';
+  document.getElementById('faultAction').value = '';
+  document.getElementById('photoPreviews').innerHTML = '';
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.sev-btn.medium').classList.add('active');
+  openModal('reportModal');
+}
+
+function setSev(sev, el) {
+  selectedSev = sev;
+  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function handlePhotos(e) {
+  const previews = document.getElementById('photoPreviews');
+  Array.from(e.target.files).forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      uploadedPhotos.push(ev.target.result);
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.className = 'photo-thumb';
+      previews.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+async function submitReport() {
+  const desc = document.getElementById('faultDesc').value.trim();
+  if (!desc) { toast('Fehler','Bitte eine Beschreibung eingeben.','red'); return; }
+
+  const btn = document.getElementById('reportSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>EINREICHEN...';
+
+  const entry = {
+    device_id: selectedDevice,
+    severity: selectedSev,
+    description: desc,
+    immediate_action: document.getElementById('faultAction').value.trim(),
+    photos: uploadedPhotos,
+    reported_by_name: currentProfile?.full_name || currentUser?.email || 'Unbekannt',
+    reported_by_id: currentUser?.id || null,
+    resolved: false,
+    resolved_at: null,
+    resolved_by_name: null,
+  };
+
+  if (sb) {
+    const { error } = await sb.from('faults').insert([entry]);
+    if (error) { toast('Fehler','Konnte nicht gespeichert werden: ' + error.message,'red'); btn.disabled=false; btn.innerHTML='STÖRUNG EINREICHEN'; return; }
+  } else {
+    entry.id = 'F-' + Date.now();
+    entry.created_at = new Date().toISOString();
+    faultLog.unshift(entry);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'STÖRUNG EINREICHEN';
+  closeModal('reportModal');
+  await refreshAll();
+  const d = DEVICES.find(x => x.id === selectedDevice);
+  toast('⚠ STÖRUNG GEMELDET', d.name + ' · Schweregrad: ' + sevLabel(selectedSev), 'red');
+}
+
+async function resolveDevice(deviceId) {
+  const fault = getActiveFault(deviceId);
+  if (!fault) return;
+  await resolveFault(fault.id);
+}
+
+async function resolveLog(faultId) { await resolveFault(faultId); }
+
+async function resolveFault(faultId) {
+  const update = { resolved:true, resolved_at:new Date().toISOString(), resolved_by_name: currentProfile?.full_name || currentUser?.email || 'Unbekannt' };
+  if (sb) {
+    await sb.from('faults').update(update).eq('id', faultId);
+  } else {
+    const f = faultLog.find(x => x.id === faultId);
+    if (f) Object.assign(f, update);
+  }
+  await refreshAll();
+  toast('✓ STÖRUNG BEHOBEN','Erfolgreich als behoben markiert.','green');
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOG
+// ════════════════════════════════════════════════════════════
+function renderLog() {
+  const search = (document.getElementById('logSearch')?.value||'').toLowerCase();
+  const devF = document.getElementById('logDev')?.value||'';
+  const sevF = document.getElementById('logSev')?.value||'';
+  const statF = document.getElementById('logStatus')?.value||'';
+
+  let filtered = faultLog.filter(f => {
+    const str = (f.device_id+f.description+f.reported_by_name+f.id).toLowerCase();
+    return (!search||str.includes(search)) && (!devF||f.device_id===devF) && (!sevF||f.severity===sevF) && (!statF||(statF==='open'?!f.resolved:f.resolved));
+  });
+
+  const tbody = document.getElementById('logBody');
+  if (!tbody) return;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(f => {
+    const d = DEVICES.find(x=>x.id===f.device_id);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="white-space:nowrap;color:var(--text2)">${f.id?.substring(0,12)||'—'}</td>
+      <td style="white-space:nowrap">${fmtDT(f.created_at)}</td>
+      <td><b>${d?.name||f.device_id}</b><br><span style="color:var(--text3);font-size:9px">${f.device_id}</span></td>
+      <td><span class="sev-tag sev-${f.severity}">${sevLabel(f.severity)}</span></td>
+      <td style="max-width:200px;color:var(--text2)">${truncate(f.description,70)}</td>
+      <td style="white-space:nowrap">${f.reported_by_name||'—'}</td>
+      <td style="text-align:center">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td>${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
+      <td><div style="display:flex;gap:5px;flex-wrap:nowrap">
+        <button class="btn-detail" onclick="openDetail('${f.id}')">Details</button>
+        ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">Beheben</button>`:''}
+      </div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openDetail(faultId) {
+  const f = faultLog.find(x=>x.id===faultId);
+  if (!f) return;
+  const d = DEVICES.find(x=>x.id===f.device_id);
+  document.getElementById('detailId').textContent = 'Meldung ' + (f.id||'—');
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-field"><div class="form-label">Gerät</div><div class="detail-val">${d?.name||f.device_id}<br><span class="muted">${d?.location||''}</span></div></div>
+      <div class="detail-field"><div class="form-label">Zeitstempel</div><div class="detail-val">${fmtDT(f.created_at)}</div></div>
+      <div class="detail-field"><div class="form-label">Schweregrad</div><div class="detail-val"><span class="sev-tag sev-${f.severity}">${sevLabel(f.severity)}</span></div></div>
+      <div class="detail-field"><div class="form-label">Gemeldet von</div><div class="detail-val">${f.reported_by_name||'—'}</div></div>
+    </div>
+    <div class="form-label" style="margin-bottom:7px">Störungsbeschreibung</div>
+    <div class="detail-desc">${f.description}</div>
+    ${f.immediate_action?`<div class="form-label" style="margin-bottom:7px">Sofortmaßnahmen</div><div class="detail-desc">${f.immediate_action}</div>`:''}
+    <div class="status-box ${f.resolved?'resolved':'open'}">
+      ${f.resolved?`✓ BEHOBEN am ${fmtDT(f.resolved_at)} durch ${f.resolved_by_name||'—'}`:`⚠ STATUS: OFFEN — Störung wurde noch nicht behoben`}
+    </div>
+    <div class="form-label" style="margin-bottom:8px">Fotos (${f.photos?.length||0})</div>
+    ${f.photos?.length?`<div class="detail-photos">${f.photos.map(p=>`<img src="${p}" class="detail-photo" onclick="window.open('${p}','_blank')" title="Klicken zum Vergrößern">`).join('')}</div>`:`<div style="font-family:var(--mono);font-size:11px;color:var(--text3)">Keine Fotos vorhanden</div>`}
+  `;
+  const footer = document.getElementById('detailFooter');
+  footer.innerHTML = `<button class="btn-cancel" onclick="closeModal('detailModal')">SCHLIESSEN</button>
+    ${!f.resolved&&canUserReport()?`<button class="btn-submit btn-submit-blue" onclick="resolveLog('${f.id}');closeModal('detailModal')">✓ ALS BEHOBEN MARKIEREN</button>`:''}`;
+  openModal('detailModal');
+}
+
+// ════════════════════════════════════════════════════════════
+//  MEMBERS
+// ════════════════════════════════════════════════════════════
+async function loadMembers() {
+  if (!sb) {
+    members = [
+      { id:'1', full_name:'Demo Admin', email:'admin@firma.at', role:'admin' },
+      { id:'2', full_name:'Demo Techniker', email:'tech@firma.at', role:'technician' },
+    ];
+    return;
+  }
+  const { data } = await sb.from('profiles').select('*').order('full_name');
+  members = data || [];
+}
+
+function renderMembers() {
+  const grid = document.getElementById('membersGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!members.length) { grid.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div>Keine Mitglieder gefunden</div>'; return; }
+  members.forEach(m => {
+    const initials = (m.full_name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const rc = { admin:'role-admin', technician:'role-technician', viewer:'role-viewer' }[m.role]||'role-viewer';
+    const canBadge = (m.role==='admin'||m.role==='technician')
+      ? `<span style="font-family:var(--mono);font-size:9px;color:var(--green)">● KANN MELDEN</span>`
+      : `<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">○ NUR ANSICHT</span>`;
+    const card = document.createElement('div');
+    card.className = 'member-card';
+    card.innerHTML = `
+      <div class="member-avatar">${initials}</div>
+      <div style="flex:1">
+        <div class="member-name">${m.full_name||'—'}</div>
+        <div class="member-email">${m.email||'—'}</div>
+        <div class="member-role ${rc}">${roleLabel(m.role).toUpperCase()}</div>
+        <div style="margin-top:4px">${canBadge}</div>
+      </div>
+      <div class="member-actions">
+        ${m.id!==currentUser?.id?`<button class="btn-del" onclick="deleteMember('${m.id}')" title="Löschen">🗑</button>`:''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function openAddMember() { openModal('memberModal'); }
+
+async function submitMember() {
+  const name = document.getElementById('mName').value.trim();
+  const email = document.getElementById('mEmail').value.trim();
+  const pass = document.getElementById('mPassword').value;
+  const role = document.getElementById('mRole').value;
+  if (!name||!email||!pass) { toast('Fehler','Bitte alle Pflichtfelder ausfüllen.','red'); return; }
+  if (pass.length < 8) { toast('Fehler','Passwort muss mindestens 8 Zeichen haben.','red'); return; }
+
+  const btn = document.getElementById('memberSubmitBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>ERSTELLEN...';
+
+  if (!sb) {
+    members.push({ id: Date.now()+'', full_name:name, email, role });
+    closeModal('memberModal'); renderMembers();
+    toast('✓ MITGLIED ANGELEGT', name + ' wurde hinzugefügt.', 'green');
+    btn.disabled=false; btn.innerHTML='MITGLIED ANLEGEN'; return;
+  }
+
+  // Create user via Supabase admin (requires service role in production)
+  // For now insert profile directly (user must be created via Supabase dashboard or edge function)
+  const { error } = await sb.from('profiles').insert([{ full_name:name, email, role }]);
+  btn.disabled=false; btn.innerHTML='MITGLIED ANLEGEN';
+  if (error) { toast('Fehler', 'Benutzer muss zuerst im Supabase Dashboard angelegt werden. Dann Profil hier speichern.','red'); return; }
+  closeModal('memberModal');
+  await loadMembers(); renderMembers();
+  toast('✓ MITGLIED ANGELEGT', name + ' wurde hinzugefügt.', 'green');
+}
+
+async function deleteMember(id) {
+  if (!confirm('Mitglied wirklich entfernen?')) return;
+  if (sb) await sb.from('profiles').delete().eq('id', id);
+  else members = members.filter(m => m.id !== id);
+  await loadMembers(); renderMembers();
+  toast('Mitglied entfernt','Benutzer wurde aus dem System entfernt.','green');
+}
+
+// ════════════════════════════════════════════════════════════
+//  STATS
+// ════════════════════════════════════════════════════════════
+function updateStats() {
+  const active = DEVICES.filter(d=>hasFault(d.id)).length;
+  const ok = DEVICES.length - active;
+  const resolved = faultLog.filter(f=>f.resolved).length;
+  const total = faultLog.length;
+  document.getElementById('d-ok').textContent = ok;
+  document.getElementById('d-faults').textContent = active;
+  document.getElementById('d-resolved').textContent = resolved;
+  document.getElementById('sb-ok').textContent = ok;
+  document.getElementById('sb-faults').textContent = active;
+  document.getElementById('sb-total-log').textContent = total;
+}
+
+// ════════════════════════════════════════════════════════════
+//  TOASTS
+// ════════════════════════════════════════════════════════════
+function toast(title, body, type='red') {
+  const w = document.getElementById('alertWrap');
+  const el = document.createElement('div');
+  el.className = `toast t-${type}`;
+  el.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  w.prepend(el);
+  setTimeout(()=>el.remove(), 6000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  MODAL HELPERS
+// ════════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ════════════════════════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════════════════════════
+function startClock() {
+  const tick = ()=> document.getElementById('htime').textContent = new Date().toLocaleString('de-AT');
+  tick(); setInterval(tick, 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════════
+function sevLabel(s){ return {low:'Niedrig',medium:'Mittel',high:'Hoch'}[s]||s; }
+function roleLabel(r){ return {admin:'Admin',technician:'Techniker',viewer:'Betrachter'}[r]||r; }
+function truncate(s,n){ return s&&s.length>n?s.substring(0,n)+'…':s||''; }
+function fmtDT(iso){ if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('de-AT')+' '+d.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}); }
+</script>
+</body>
+</html>
