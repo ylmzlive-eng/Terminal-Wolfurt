@@ -699,18 +699,32 @@ window.addEventListener('load', async () => {
   document.getElementById('loadingScreen').style.display = 'none';
 
   if (!configured) {
-    // Demo mode
     showSetupBanner();
     showLogin();
     return;
   }
 
-  const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    await loadProfile();
-    showApp();
-  } else {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      currentUser = session.user;
+      await loadProfile();
+      if (!currentProfile) {
+        // Profil existiert nicht — automatisch anlegen
+        await sb.from('profiles').upsert([{
+          id: currentUser.id,
+          full_name: currentUser.email,
+          email: currentUser.email,
+          role: 'admin'
+        }]);
+        await loadProfile();
+      }
+      showApp();
+    } else {
+      showLogin();
+    }
+  } catch(e) {
+    console.error('Boot Fehler:', e);
     showLogin();
   }
 });
@@ -760,6 +774,15 @@ async function doLogin() {
 
   currentUser = data.user;
   await loadProfile();
+  if (!currentProfile) {
+    await sb.from('profiles').upsert([{
+      id: currentUser.id,
+      full_name: currentUser.email,
+      email: currentUser.email,
+      role: 'admin'
+    }]);
+    await loadProfile();
+  }
   hideLogin();
   showApp();
 }
@@ -781,15 +804,17 @@ async function logout() {
 
 async function loadProfile() {
   if (!sb || !currentUser) return;
-  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  currentProfile = data;
+  try {
+    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (error) console.error('loadProfile error:', error);
+    currentProfile = data;
+  } catch(e) { console.error('loadProfile exception:', e); }
 }
 
 // ════════════════════════════════════════════════════════════
 //  APP
 // ════════════════════════════════════════════════════════════
 async function showApp() {
-  // Correct display mode depending on screen size
   const isMobile = window.innerWidth <= 768;
   document.getElementById('appScreen').style.display = isMobile ? 'flex' : 'block';
 
@@ -800,29 +825,18 @@ async function showApp() {
     document.getElementById('mobileUserName').textContent = name.split(' ')[0];
   }
 
-  // Inject PWA manifest dynamically
-  const manifest = {
-    name: 'Anlagenüberwachung',
-    short_name: 'Anlagenapp',
-    start_url: window.location.href,
-    display: 'standalone',
-    background_color: '#0a0c0f',
-    theme_color: '#0a0c0f',
-    icons: [{ src: 'https://via.placeholder.com/192x192/f5a623/000000?text=A', sizes: '192x192', type: 'image/png' }]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  document.getElementById('manifestLink').href = URL.createObjectURL(blob);
+  // Inject PWA manifest
+  try {
+    const manifest = { name:'Anlagenüberwachung', short_name:'Anlagenapp', start_url:window.location.href, display:'standalone', background_color:'#0a0c0f', theme_color:'#0a0c0f', icons:[{src:'https://via.placeholder.com/192x192/f5a623/000000?text=A',sizes:'192x192',type:'image/png'}] };
+    const blob = new Blob([JSON.stringify(manifest)], { type:'application/json' });
+    document.getElementById('manifestLink').href = URL.createObjectURL(blob);
+  } catch(e) {}
 
-  // Hide admin-only if not admin
   const isAdmin = (currentProfile?.role || 'admin') === 'admin';
   document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
 
   startClock();
-
-  // Load data and update UI
   await refreshAll();
-
-  // Auto-refresh every 30 seconds
   setInterval(async () => { await refreshAll(); }, 30000);
 }
 
@@ -831,7 +845,11 @@ async function refreshAll() {
   renderDevices();
   renderLog();
   updateStats();
-  if ((currentProfile?.role || 'admin') === 'admin') await loadMembers();
+  const role = currentProfile?.role || 'admin';
+  if (role === 'admin') {
+    await loadMembers();
+    renderMembers();
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -852,15 +870,17 @@ function showPage(name) {
 // ════════════════════════════════════════════════════════════
 async function loadFaults() {
   if (!sb) {
-    // demo data
     faultLog = [
-      { id:'F-001', device_id:'KRN-01', created_at:new Date().toISOString(), severity:'high', description:'Hydraulikdruckabfall am Hauptzylinder. Fehler E-47 im Panel.', reported_by_name:'Demo Techniker', immediate_action:'Gerät stillgelegt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
+      { id:'F-001', device_id:'KRN-01', created_at:new Date().toISOString(), severity:'high', description:'Hydraulikdruckabfall am Hauptzylinder.', reported_by_name:'Demo Techniker', immediate_action:'Gerät stillgelegt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
       { id:'F-002', device_id:'KCH-02', created_at:new Date(Date.now()-86400000).toISOString(), severity:'medium', description:'Geräusch im Antriebsstrang bei Volllast.', reported_by_name:'Demo Admin', immediate_action:'Last auf 50% begrenzt', photos:[], resolved:true, resolved_at:new Date().toISOString(), resolved_by_name:'Demo Admin' },
     ];
     return;
   }
-  const { data } = await sb.from('faults').select('*').order('created_at', { ascending: false });
-  faultLog = data || [];
+  try {
+    const { data, error } = await sb.from('faults').select('*').order('created_at', { ascending: false });
+    if (error) { console.error('loadFaults error:', error); return; }
+    faultLog = data || [];
+  } catch(e) { console.error('loadFaults exception:', e); }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1156,8 +1176,11 @@ async function loadMembers() {
     ];
     return;
   }
-  const { data } = await sb.from('profiles').select('*').order('full_name');
-  members = data || [];
+  try {
+    const { data, error } = await sb.from('profiles').select('*').order('full_name');
+    if (error) { console.error('loadMembers error:', error); return; }
+    members = data || [];
+  } catch(e) { console.error('loadMembers exception:', e); }
 }
 
 function renderMembers() {
