@@ -791,19 +791,31 @@ function setSev(sev, el) {
   el.classList.add('active');
 }
 
+let uploadedFiles = [];
+
 function handlePhotos(e) {
   const previews = document.getElementById('photoPreviews');
   Array.from(e.target.files).forEach(f => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      uploadedPhotos.push(ev.target.result);
-      const img = document.createElement('img');
-      img.src = ev.target.result;
-      img.className = 'photo-thumb';
-      previews.appendChild(img);
-    };
-    reader.readAsDataURL(f);
+    uploadedFiles.push(f);
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(f);
+    img.className = 'photo-thumb';
+    previews.appendChild(img);
   });
+}
+
+async function uploadPhotosToStorage(faultId) {
+  const urls = [];
+  for (const file of uploadedFiles) {
+    const ext = file.name.split('.').pop();
+    const path = faultId + '/' + Date.now() + '_' + Math.random().toString(36).substring(2,8) + '.' + ext;
+    const { error } = await sb.storage.from('fault-photos').upload(path, file, { upsert: false });
+    if (!error) {
+      const { data } = sb.storage.from('fault-photos').getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+  }
+  return urls;
 }
 
 async function submitReport() {
@@ -819,7 +831,7 @@ async function submitReport() {
     severity: selectedSev,
     description: desc,
     immediate_action: document.getElementById('faultAction').value.trim(),
-    photos: uploadedPhotos,
+    photos: [],
     reported_by_name: currentProfile?.full_name || currentUser?.email || 'Unbekannt',
     reported_by_id: currentUser?.id || null,
     resolved: false,
@@ -828,14 +840,25 @@ async function submitReport() {
   };
 
   if (sb) {
-    const { error } = await sb.from('faults').insert([entry]);
+    const { data, error } = await sb.from('faults').insert([entry]).select().single();
     if (error) { toast('Fehler','Konnte nicht gespeichert werden: ' + error.message,'red'); btn.disabled=false; btn.innerHTML='STÖRUNG EINREICHEN'; return; }
+
+    if (uploadedFiles.length > 0) {
+      btn.innerHTML = '<span class="spinner"></span>FOTOS HOCHLADEN...';
+      const photoUrls = await uploadPhotosToStorage(data.id);
+      if (photoUrls.length > 0) {
+        await sb.from('faults').update({ photos: photoUrls }).eq('id', data.id);
+      }
+    }
   } else {
     entry.id = 'F-' + Date.now();
     entry.created_at = new Date().toISOString();
+    entry.photos = uploadedFiles.map(f => URL.createObjectURL(f));
     faultLog.unshift(entry);
   }
 
+  uploadedFiles = [];
+  uploadedPhotos = [];
   btn.disabled = false;
   btn.innerHTML = 'STÖRUNG EINREICHEN';
   closeModal('reportModal');
