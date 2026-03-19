@@ -242,15 +242,51 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .empty-state { text-align:center; padding:48px 20px; font-family:var(--mono); font-size:12px; color:var(--text3); }
 .empty-icon { font-size:36px; margin-bottom:12px; opacity:.4; }
 
-/* RESPONSIVE */
+/* MOBILE BOTTOM NAV */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 2px solid var(--border);
+  z-index: 200;
+  padding: 0;
+}
+.mobile-nav-inner {
+  display: flex;
+  align-items: stretch;
+}
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px 14px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text2);
+  cursor: pointer;
+  gap: 5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: none;
+  background: none;
+  transition: color .15s;
+  border-top: 2px solid transparent;
+  margin-top: -2px;
+}
+.mobile-nav-item.active { color: var(--accent); border-top-color: var(--accent); }
+.mobile-nav-icon { font-size: 20px; }
+
 @media(max-width:768px){
-  .login-wrap { grid-template-columns:1fr; }
-  .login-left { display:none; }
-  .main-grid { grid-template-columns:1fr; }
-  .sidebar { display:none; }
-  .stats-row { grid-template-columns:repeat(2,1fr); }
-  header { padding:0 14px; }
-  .content { padding:16px 14px; }
+  .main-grid { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  header { padding: 0 14px; }
+  .content { padding: 16px 14px 80px; }
+  .mobile-nav { display: block; }
+  .logo-sub { display: none; }
 }
 
 textarea.form-input { min-height:90px; resize:vertical; line-height:1.6; }
@@ -329,7 +365,6 @@ select.form-input { cursor:pointer; }
       <div class="sb-section">
         <div class="sb-label">Navigation</div>
         <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">▦</span> Dashboard</div>
-        <div class="nav-item" onclick="showPage('devices')" id="nav-devices"><span class="nav-icon">⚙</span> Geräte</div>
         <div class="nav-item" onclick="showPage('log')" id="nav-log"><span class="nav-icon">≡</span> Störungslog</div>
         <div class="nav-item admin-only" onclick="showPage('members')" id="nav-members"><span class="nav-icon">◉</span> Mitglieder</div>
       </div>
@@ -366,12 +401,6 @@ select.form-input { cursor:pointer; }
       </div>
 
       <!-- DEVICES -->
-      <div class="page" id="page-devices">
-        <div class="page-title">GERÄTE</div>
-        <div class="page-sub">Alle 6 verwalteten Geräte · 2 Brückenkrane · 4 Kalmar Champ</div>
-        <div class="device-grid" id="dev-grid"></div>
-      </div>
-
       <!-- LOG -->
       <div class="page" id="page-log">
         <div class="page-title">STÖRUNGSLOG</div>
@@ -500,6 +529,21 @@ select.form-input { cursor:pointer; }
     </div>
   </div>
 </div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav" id="mobileNav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-item active" id="mnav-dashboard" onclick="showPage('dashboard')">
+      <span class="mobile-nav-icon">▦</span>Dashboard
+    </button>
+    <button class="mobile-nav-item" id="mnav-log" onclick="showPage('log')">
+      <span class="mobile-nav-icon">≡</span>Störungslog
+    </button>
+    <button class="mobile-nav-item admin-only" id="mnav-members" onclick="showPage('members')">
+      <span class="mobile-nav-icon">◉</span>Mitglieder
+    </button>
+  </div>
+</nav>
 
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -684,8 +728,10 @@ async function refreshAll() {
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
+  if (document.getElementById('nav-' + name)) document.getElementById('nav-' + name).classList.add('active');
+  if (document.getElementById('mnav-' + name)) document.getElementById('mnav-' + name).classList.add('active');
   if (name === 'members') renderMembers();
 }
 
@@ -712,11 +758,9 @@ function getActiveFault(deviceId) { return faultLog.find(f => f.device_id === de
 function hasFault(deviceId) { return !!getActiveFault(deviceId); }
 
 function renderDevices() {
-  ['dash-grid','dev-grid'].forEach(gid => {
-    const grid = document.getElementById(gid);
-    grid.innerHTML = '';
-    DEVICES.forEach(d => grid.appendChild(buildDeviceCard(d)));
-  });
+  const grid = document.getElementById('dash-grid');
+  grid.innerHTML = '';
+  DEVICES.forEach(d => grid.appendChild(buildDeviceCard(d)));
 }
 
 function buildDeviceCard(d) {
@@ -776,25 +820,71 @@ function setSev(sev, el) {
   el.classList.add('active');
 }
 
+const MAX_PHOTOS = 5;
+const MAX_FILE_MB = 10;
+const COMPRESS_MAX_PX = 1600;
+const COMPRESS_QUALITY = 0.82;
 let uploadedFiles = [];
 
 function handlePhotos(e) {
   const previews = document.getElementById('photoPreviews');
-  Array.from(e.target.files).forEach(f => {
+  const files = Array.from(e.target.files);
+  const remaining = MAX_PHOTOS - uploadedFiles.length;
+  if (remaining <= 0) { toast('Limit erreicht','Maximal ' + MAX_PHOTOS + ' Fotos pro Störung erlaubt.','red'); e.target.value=''; return; }
+  const toAdd = files.slice(0, remaining);
+  if (files.length > remaining) toast('Hinweis','Nur ' + remaining + ' weitere Foto(s) möglich. Rest wurde ignoriert.','red');
+  toAdd.forEach(f => {
+    if (f.size > MAX_FILE_MB * 1024 * 1024) { toast('Datei zu groß', f.name + ' ist größer als ' + MAX_FILE_MB + ' MB.','red'); return; }
     uploadedFiles.push(f);
     const img = document.createElement('img');
     img.src = URL.createObjectURL(f);
     img.className = 'photo-thumb';
     previews.appendChild(img);
   });
+  updatePhotoCounter();
+  e.target.value = '';
+}
+
+function updatePhotoCounter() {
+  const area = document.getElementById('uploadArea');
+  const existing = area.querySelector('.photo-count');
+  if (existing) existing.remove();
+  if (uploadedFiles.length > 0) {
+    const span = document.createElement('div');
+    span.className = 'photo-count';
+    span.style.cssText = 'font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:6px;letter-spacing:1px';
+    span.textContent = uploadedFiles.length + ' / ' + MAX_PHOTOS + ' FOTOS AUSGEWÄHLT';
+    area.appendChild(span);
+  }
+}
+
+function compressImage(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.width, h = img.height;
+      if (w > COMPRESS_MAX_PX || h > COMPRESS_MAX_PX) {
+        if (w > h) { h = Math.round(h * COMPRESS_MAX_PX / w); w = COMPRESS_MAX_PX; }
+        else { w = Math.round(w * COMPRESS_MAX_PX / h); h = COMPRESS_MAX_PX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', COMPRESS_QUALITY);
+    };
+    img.onerror = () => resolve(file);
+    img.src = url;
+  });
 }
 
 async function uploadPhotosToStorage(faultId) {
   const urls = [];
-  for (const file of uploadedFiles) {
-    const ext = file.name.split('.').pop();
-    const path = faultId + '/' + Date.now() + '_' + Math.random().toString(36).substring(2,8) + '.' + ext;
-    const { error } = await sb.storage.from('fault-photos').upload(path, file, { upsert: false });
+  for (let i = 0; i < uploadedFiles.length; i++) {
+    const compressed = await compressImage(uploadedFiles[i]);
+    const path = faultId + '/' + Date.now() + '_' + i + '.jpg';
+    const { error } = await sb.storage.from('fault-photos').upload(path, compressed, { upsert: false, contentType: 'image/jpeg' });
     if (!error) {
       const { data } = sb.storage.from('fault-photos').getPublicUrl(path);
       urls.push(data.publicUrl);
