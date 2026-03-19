@@ -434,14 +434,6 @@ select.form-input { cursor:pointer; }
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Schweregrad</label>
-        <div class="sev-sel">
-          <div class="sev-btn low" onclick="setSev('low',this)">⚠ NIEDRIG</div>
-          <div class="sev-btn medium active medium" onclick="setSev('medium',this)">⚡ MITTEL</div>
-          <div class="sev-btn high" onclick="setSev('high',this)">🚨 HOCH</div>
-        </div>
-      </div>
-      <div class="form-group">
         <label class="form-label">Störungsbeschreibung *</label>
         <textarea class="form-input" id="faultDesc" placeholder="Beschreiben Sie die Störung detailliert: Was ist aufgetreten? Seit wann? Welche Auswirkungen hat die Störung?"></textarea>
       </div>
@@ -523,12 +515,12 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 //  GERÄTE-DEFINITION
 // ════════════════════════════════════════════════════════════
 const DEVICES = [
-  { id:'KRN-01', name:'KRAN 01',   type:'crane',  badge:'badge-crane',  badgeText:'BRÜCKENKRAN',  location:'Halle A',         capacity:'20t', yearBuilt:2018, lastService:'12.01.2025' },
-  { id:'KRN-02', name:'KRAN 02',   type:'crane',  badge:'badge-crane',  badgeText:'BRÜCKENKRAN',  location:'Halle B',         capacity:'32t', yearBuilt:2019, lastService:'08.02.2025' },
-  { id:'KCH-01', name:'KALMAR 01', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Außengelände N',  capacity:'8t',  yearBuilt:2021, lastService:'15.01.2025' },
-  { id:'KCH-02', name:'KALMAR 02', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Außengelände S',  capacity:'8t',  yearBuilt:2021, lastService:'20.01.2025' },
-  { id:'KCH-03', name:'KALMAR 03', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Lagerhalle Ost',  capacity:'10t', yearBuilt:2022, lastService:'02.02.2025' },
-  { id:'KCH-04', name:'KALMAR 04', type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP', location:'Lagerhalle West', capacity:'10t', yearBuilt:2022, lastService:'05.02.2025' },
+  { id:'KRN-01', name:'KRAN 1',          type:'crane',  badge:'badge-crane',  badgeText:'PORTAL KRAN'  },
+  { id:'KRN-02', name:'KRAN 2',          type:'crane',  badge:'badge-crane',  badgeText:'PORTAL KRAN'  },
+  { id:'KCH-01', name:'KALMAR CHAMP 1',  type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP' },
+  { id:'KCH-02', name:'KALMAR CHAMP 2',  type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP' },
+  { id:'KCH-03', name:'KALMAR CHAMP 3',  type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP' },
+  { id:'KCH-04', name:'KALMAR CHAMP 4',  type:'kalmar', badge:'badge-kalmar', badgeText:'KALMAR CHAMP' },
 ];
 
 // ════════════════════════════════════════════════════════════
@@ -742,16 +734,11 @@ function buildDeviceCard(d) {
       <div>
         <span class="type-badge ${d.badge}">${d.badgeText}</span>
         <div class="dc-name">${d.name}</div>
-        <div class="dc-id">${d.id} · ${d.location}</div>
+        <div class="dc-id">${d.id}</div>
       </div>
       <div class="status-ind" style="color:${statusColor}">
         <div class="sdot ${dotClass}"></div>${statusText}
       </div>
-    </div>
-    <div class="dc-body">
-      <div class="dc-row"><span class="dk">Tragfähigkeit</span><span class="dv">${d.capacity}</span></div>
-      <div class="dc-row"><span class="dk">Baujahr</span><span class="dv">${d.yearBuilt}</span></div>
-      <div class="dc-row"><span class="dk">Letzte Wartung</span><span class="dv">${d.lastService}</span></div>
     </div>
     ${fault ? `<div class="fault-banner">⚠ ${truncate(fault.description,70)}</div>` : ''}
     ${canReport ? `<div class="dc-actions">
@@ -774,14 +761,12 @@ function openReportModal(deviceId) {
   if (!canUserReport()) { toast('Kein Zugriff','Ihre Rolle erlaubt keine Störungsmeldungen.','red'); return; }
   selectedDevice = deviceId;
   selectedSev = 'medium';
-  uploadedPhotos = [];
+  uploadedFiles = [];
   const d = DEVICES.find(x => x.id === deviceId);
-  document.getElementById('reportDeviceName').textContent = d.name + ' · ' + d.id + ' · ' + d.location;
+  document.getElementById('reportDeviceName').textContent = d.name + ' · ' + d.id;
   document.getElementById('faultDesc').value = '';
   document.getElementById('faultAction').value = '';
   document.getElementById('photoPreviews').innerHTML = '';
-  document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('.sev-btn.medium').classList.add('active');
   openModal('reportModal');
 }
 
