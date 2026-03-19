@@ -506,12 +506,6 @@ select.form-input { cursor:pointer; }
             <option value="KCH-03">Kalmar 03</option>
             <option value="KCH-04">Kalmar 04</option>
           </select>
-          <select class="log-filter" id="logSev" onchange="renderLog()">
-            <option value="">Alle Schweregrade</option>
-            <option value="low">Niedrig</option>
-            <option value="medium">Mittel</option>
-            <option value="high">Hoch</option>
-          </select>
           <select class="log-filter" id="logStatus" onchange="renderLog()">
             <option value="">Alle Status</option>
             <option value="open">Offen</option>
@@ -521,7 +515,7 @@ select.form-input { cursor:pointer; }
         <div style="overflow-x:auto">
           <table class="log-table">
             <thead><tr>
-              <th>ID</th><th>Zeitstempel</th><th>Gerät</th><th>Schweregrad</th>
+              <th>ID</th><th>Zeitstempel</th><th>Gerät</th>
               <th>Beschreibung</th><th>Gemeldet von</th><th>Fotos</th><th>Status</th><th>Aktionen</th>
             </tr></thead>
             <tbody id="logBody"></tbody>
@@ -1106,14 +1100,14 @@ function renderLog() {
 
   let filtered = faultLog.filter(f => {
     const str = (f.device_id+f.description+f.reported_by_name+f.id).toLowerCase();
-    return (!search||str.includes(search)) && (!devF||f.device_id===devF) && (!sevF||f.severity===sevF) && (!statF||(statF==='open'?!f.resolved:f.resolved));
+    return (!search||str.includes(search)) && (!devF||f.device_id===devF) && (!statF||(statF==='open'?!f.resolved:f.resolved));
   });
 
   const tbody = document.getElementById('logBody');
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
     return;
   }
 
@@ -1125,7 +1119,6 @@ function renderLog() {
       <td style="white-space:nowrap;color:var(--text2)">${f.id?.substring(0,12)||'—'}</td>
       <td style="white-space:nowrap">${fmtDT(f.created_at)}</td>
       <td><b>${d?.name||f.device_id}</b><br><span style="color:var(--text3);font-size:9px">${f.device_id}</span></td>
-      <td><span class="sev-tag sev-${f.severity}">${sevLabel(f.severity)}</span></td>
       <td style="max-width:200px;color:var(--text2)">${truncate(f.description,70)}</td>
       <td style="white-space:nowrap">${f.reported_by_name||'—'}</td>
       <td style="text-align:center">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
