@@ -150,7 +150,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .log-search:focus { border-color:var(--accent); }
 .log-filter { background:var(--surface); border:1px solid var(--border); padding:8px 12px; color:var(--text2); font-family:var(--mono); font-size:11px; outline:none; cursor:pointer; }
 .log-filter:focus { border-color:var(--accent); }
-.log-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+.log-table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; table-layout:fixed; }
 .log-table th { background:var(--surface2); border:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text2); letter-spacing:1px; font-weight:500; text-transform:uppercase; font-size:9px; white-space:nowrap; }
 .log-table td { border:1px solid var(--border); padding:9px 12px; color:var(--text); vertical-align:middle; }
 .log-table tr:hover td { background:var(--surface2); }
@@ -550,8 +550,13 @@ select.form-input { cursor:pointer; }
         <div style="overflow-x:auto">
           <table class="log-table">
             <thead><tr>
-              <th>ID</th><th>Zeitstempel</th><th>Gerät</th>
-              <th>Beschreibung</th><th>Gemeldet von</th><th>Fotos</th><th>Status</th><th>Aktionen</th>
+              <th style="width:140px">Zeitstempel</th>
+              <th style="width:130px">Gerät</th>
+              <th>Beschreibung</th>
+              <th style="width:130px">Gemeldet von</th>
+              <th style="width:60px;text-align:center">Fotos</th>
+              <th style="width:90px">Status</th>
+              <th style="width:110px">Aktionen</th>
             </tr></thead>
             <tbody id="logBody"></tbody>
           </table>
@@ -1161,7 +1166,7 @@ function renderLog() {
   if (!tbody) return;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
     return;
   }
 
@@ -1170,16 +1175,15 @@ function renderLog() {
     const d = DEVICES.find(x=>x.id===f.device_id);
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="white-space:nowrap;color:var(--text2)">${f.id?.substring(0,12)||'—'}</td>
-      <td style="white-space:nowrap">${fmtDT(f.created_at)}</td>
-      <td><b>${d?.name||f.device_id}</b><br><span style="color:var(--text3);font-size:9px">${f.device_id}</span></td>
-      <td style="max-width:200px;color:var(--text2)">${truncate(f.description,70)}</td>
-      <td style="white-space:nowrap">${f.reported_by_name||'—'}</td>
-      <td style="text-align:center">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
-      <td>${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
-      <td><div style="display:flex;gap:5px;flex-wrap:nowrap">
+      <td style="white-space:nowrap;width:140px">${fmtDT(f.created_at)}</td>
+      <td style="width:130px"><b>${d?.name||f.device_id}</b></td>
+      <td style="width:0;min-width:0"><div style="max-height:60px;overflow-y:auto;padding-right:4px;line-height:1.5;color:var(--text2);font-size:11px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">${f.description}</div></td>
+      <td style="white-space:nowrap;width:130px">${f.reported_by_name||'—'}</td>
+      <td style="text-align:center;width:60px">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="width:90px">${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
+      <td style="width:110px"><div style="display:flex;gap:5px;flex-wrap:nowrap">
         <button class="btn-detail" onclick="openDetail('${f.id}')">Details</button>
-        ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">Beheben</button>`:''}
+        ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">✓</button>`:''}
       </div></td>
     `;
     tbody.appendChild(tr);
