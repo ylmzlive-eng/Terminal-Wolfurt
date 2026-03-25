@@ -116,13 +116,13 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .device-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:14px; margin-bottom:24px; }
 .device-card { background:var(--surface); border:2px solid var(--border); overflow:hidden; transition:transform .15s; }
 .device-card:hover { transform:translateY(-2px); }
-.device-card.ok { border-color:var(--green); background:linear-gradient(135deg, rgba(34,197,94,.12) 0%, var(--surface) 60%); box-shadow: 0 0 24px rgba(34,197,94,.15); }
-.device-card.fault { border-color:var(--red); background:linear-gradient(135deg, rgba(239,68,68,.15) 0%, var(--surface) 60%); animation:faultAnim 3s infinite; }
-@keyframes faultAnim { 0%,100%{box-shadow:0 0 20px rgba(239,68,68,.2)}50%{box-shadow:0 0 36px rgba(239,68,68,.45)} }
+.device-card.ok { border-color:var(--green); background:linear-gradient(135deg, rgba(34,197,94,.25) 0%, rgba(34,197,94,.08) 50%, var(--surface) 100%); box-shadow: 0 0 32px rgba(34,197,94,.3), inset 0 0 32px rgba(34,197,94,.05); }
+.device-card.fault { border-color:var(--red); background:linear-gradient(135deg, rgba(239,68,68,.25) 0%, rgba(239,68,68,.08) 50%, var(--surface) 100%); animation:faultAnim 3s infinite; }
+@keyframes faultAnim { 0%,100%{box-shadow:0 0 24px rgba(239,68,68,.3), inset 0 0 32px rgba(239,68,68,.05)}50%{box-shadow:0 0 48px rgba(239,68,68,.55), inset 0 0 32px rgba(239,68,68,.08)} }
 .dc-head { padding:16px 16px 12px; display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); position:relative; }
 .dc-status-bar { position:absolute; top:0; left:0; right:0; height:5px; border-radius:0; }
-.dc-status-bar.ok { background:var(--green); box-shadow:0 0 12px var(--green); }
-.dc-status-bar.fault { background:var(--red); box-shadow:0 0 12px var(--red); animation:pulse 1.5s infinite; }
+.dc-status-bar.ok { background:var(--green); box-shadow:0 0 20px var(--green), 0 0 40px rgba(34,197,94,.6); height:6px; }
+.dc-status-bar.fault { background:var(--red); box-shadow:0 0 20px var(--red), 0 0 40px rgba(239,68,68,.6); height:6px; animation:pulse 1.5s infinite; }
 .type-badge { font-family:var(--mono); font-size:9px; letter-spacing:2px; padding:2px 7px; border:1px solid; margin-bottom:5px; display:inline-block; }
 .badge-crane { color:var(--accent); border-color:var(--accent); background:rgba(245,166,35,.07); }
 .badge-kalmar { color:var(--blue); border-color:var(--blue); background:rgba(59,130,246,.07); }
@@ -130,8 +130,8 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .dc-id { font-family:var(--mono); font-size:9px; color:var(--text2); margin-top:2px; }
 .status-ind { display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:10px; letter-spacing:1px; text-transform:uppercase; font-weight:600; }
 .sdot { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
-.sdot-ok { background:var(--green); box-shadow:0 0 12px var(--green); }
-.sdot-fault { background:var(--red); box-shadow:0 0 12px var(--red); animation:pulse 1.5s infinite; }
+.sdot-ok { background:var(--green); box-shadow:0 0 16px var(--green), 0 0 32px rgba(34,197,94,.7); }
+.sdot-fault { background:var(--red); box-shadow:0 0 16px var(--red), 0 0 32px rgba(239,68,68,.7); animation:pulse 1.5s infinite; }
 .dc-body { padding:12px 16px; }
 .dc-row { display:flex; justify-content:space-between; margin-bottom:7px; font-family:var(--mono); font-size:10px; }
 .dc-row:last-child { margin-bottom:0; }
