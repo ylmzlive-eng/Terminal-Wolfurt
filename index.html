@@ -154,6 +154,18 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .log-table th { background:var(--surface2); border:1px solid var(--border); padding:9px 12px; text-align:left; color:var(--text2); letter-spacing:1px; font-weight:500; text-transform:uppercase; font-size:9px; white-space:nowrap; }
 .log-table td { border:1px solid var(--border); padding:9px 12px; color:var(--text); vertical-align:middle; }
 .log-table tr:hover td { background:var(--surface2); }
+
+/* MOBILE LOG CARDS */
+.log-card { background:var(--surface); border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; position:relative; }
+.log-card.open { border-left:3px solid var(--red); }
+.log-card.resolved { border-left:3px solid var(--green); }
+.log-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.log-card-device { font-family:var(--display); font-size:16px; letter-spacing:1px; }
+.log-card-status { font-family:var(--mono); font-size:9px; letter-spacing:1px; }
+.log-card-desc { font-family:var(--mono); font-size:11px; color:var(--text2); line-height:1.6; max-height:56px; overflow-y:auto; margin-bottom:10px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+.log-card-meta { display:flex; gap:12px; flex-wrap:wrap; font-family:var(--mono); font-size:10px; color:var(--text3); margin-bottom:10px; }
+.log-card-actions { display:flex; gap:8px; }
+#logCardList { display:none; }
 .sev-tag { display:inline-block; padding:2px 7px; font-size:9px; letter-spacing:1px; text-transform:uppercase; border:1px solid; font-weight:600; white-space:nowrap; }
 .sev-low { color:var(--yellow); border-color:var(--yellow); }
 .sev-medium { color:var(--accent); border-color:var(--accent); }
@@ -380,6 +392,9 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
   /* Log table scroll */
   .log-table { font-size: 10px; }
   .log-table th, .log-table td { padding: 7px 8px; }
+  /* On mobile: hide table, show cards */
+  .log-table-wrap { display: none !important; }
+  #logCardList { display: block !important; }
 
   /* Login box */
   .login-right { padding: 24px 20px; align-items: flex-start; padding-top: 40px; }
@@ -547,7 +562,7 @@ select.form-input { cursor:pointer; }
             <option value="resolved">Behoben</option>
           </select>
         </div>
-        <div style="overflow-x:auto">
+        <div class="log-table-wrap" style="overflow-x:auto">
           <table class="log-table">
             <thead><tr>
               <th style="width:140px">Zeitstempel</th>
@@ -561,6 +576,8 @@ select.form-input { cursor:pointer; }
             <tbody id="logBody"></tbody>
           </table>
         </div>
+        <!-- MOBILE CARD VIEW -->
+        <div id="logCardList"></div>
       </div>
 
       <!-- MEMBERS (Admin only) -->
@@ -1154,7 +1171,6 @@ async function resolveFault(faultId) {
 function renderLog() {
   const search = (document.getElementById('logSearch')?.value||'').toLowerCase();
   const devF = document.getElementById('logDev')?.value||'';
-  const sevF = document.getElementById('logSev')?.value||'';
   const statF = document.getElementById('logStatus')?.value||'';
 
   let filtered = faultLog.filter(f => {
@@ -1163,31 +1179,65 @@ function renderLog() {
   });
 
   const tbody = document.getElementById('logBody');
-  if (!tbody) return;
+  const cardList = document.getElementById('logCardList');
 
+  // Empty state
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div></td></tr>`;
+    if (cardList) cardList.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>Keine Einträge gefunden</div>`;
     return;
   }
 
-  tbody.innerHTML = '';
-  filtered.forEach(f => {
-    const d = DEVICES.find(x=>x.id===f.device_id);
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="white-space:nowrap;width:140px">${fmtDT(f.created_at)}</td>
-      <td style="width:130px"><b>${d?.name||f.device_id}</b></td>
-      <td style="width:0;min-width:0"><div style="max-height:60px;overflow-y:auto;padding-right:4px;line-height:1.5;color:var(--text2);font-size:11px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">${f.description}</div></td>
-      <td style="white-space:nowrap;width:130px">${f.reported_by_name||'—'}</td>
-      <td style="text-align:center;width:60px">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
-      <td style="width:90px">${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
-      <td style="width:110px"><div style="display:flex;gap:5px;flex-wrap:nowrap">
-        <button class="btn-detail" onclick="openDetail('${f.id}')">Details</button>
-        ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">✓</button>`:''}
-      </div></td>
-    `;
-    tbody.appendChild(tr);
-  });
+  // Desktop table
+  if (tbody) {
+    tbody.innerHTML = '';
+    filtered.forEach(f => {
+      const d = DEVICES.find(x=>x.id===f.device_id);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="white-space:nowrap;width:140px">${fmtDT(f.created_at)}</td>
+        <td style="width:130px"><b>${d?.name||f.device_id}</b></td>
+        <td style="width:0;min-width:0"><div style="max-height:60px;overflow-y:auto;padding-right:4px;line-height:1.5;color:var(--text2);font-size:11px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">${f.description}</div></td>
+        <td style="white-space:nowrap;width:130px">${f.reported_by_name||'—'}</td>
+        <td style="text-align:center;width:60px">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+        <td style="width:90px">${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
+        <td style="width:110px"><div style="display:flex;gap:5px;flex-wrap:nowrap">
+          <button class="btn-detail" onclick="openDetail('${f.id}')">Details</button>
+          ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">✓</button>`:''}
+        </div></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Mobile cards
+  if (cardList) {
+    cardList.innerHTML = '';
+    filtered.forEach(f => {
+      const d = DEVICES.find(x=>x.id===f.device_id);
+      const card = document.createElement('div');
+      card.className = 'log-card ' + (f.resolved ? 'resolved' : 'open');
+      card.innerHTML = `
+        <div class="log-card-top">
+          <div class="log-card-device">${d?.name||f.device_id}</div>
+          <div class="log-card-status" style="color:${f.resolved?'var(--green)':'var(--red)'}">
+            ${f.resolved ? '✓ BEHOBEN' : '● OFFEN'}
+          </div>
+        </div>
+        <div class="log-card-desc">${f.description}</div>
+        <div class="log-card-meta">
+          <span>🕐 ${fmtDT(f.created_at)}</span>
+          <span>👤 ${f.reported_by_name||'—'}</span>
+          ${f.photos?.length ? `<span style="color:var(--accent)">📷 ${f.photos.length} Foto(s)</span>` : ''}
+        </div>
+        <div class="log-card-actions">
+          <button class="btn-detail" onclick="openDetail('${f.id}')" style="flex:1">Details</button>
+          ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')" style="flex:1">✓ Beheben</button>`:''}
+        </div>
+      `;
+      cardList.appendChild(card);
+    });
+  }
 }
 
 function openDetail(faultId) {
