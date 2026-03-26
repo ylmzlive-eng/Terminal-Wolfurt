@@ -671,6 +671,34 @@ select.form-input { cursor:pointer; }
   </div>
 </div>
 
+<!-- RESOLVE CONFIRM MODAL -->
+<div class="modal-overlay" id="resolveModal">
+  <div class="modal">
+    <div class="modal-top-bar" style="background:linear-gradient(90deg,var(--green),#16a34a)"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">STÖRUNG BEHEBEN</div>
+        <div class="modal-sub" id="resolveModalDevice">—</div>
+      </div>
+      <button class="btn-close" onclick="closeModal('resolveModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);padding:14px 16px;font-family:var(--mono);font-size:12px;color:var(--green);margin-bottom:20px;line-height:1.6">
+        ⚠ Bitte bestätigen Sie dass die Störung tatsächlich behoben wurde.<br>
+        <span style="color:var(--text2)">Diese Aktion markiert die Störung als erledigt und ist im Log sichtbar.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lösungsbeschreibung (optional)</label>
+        <textarea class="form-input" id="resolveComment" placeholder="Was wurde gemacht? z.B. Hydraulikleitung ausgetauscht, Techniker vor Ort..." style="min-height:80px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('resolveModal')">ABBRECHEN</button>
+      <button class="btn-submit" id="resolveConfirmBtn" onclick="confirmResolve()" style="background:var(--green);color:#000">✓ JA, STÖRUNG BEHEBEN</button>
+    </div>
+  </div>
+</div>
+
 <!-- PULL TO REFRESH -->
 <div class="ptr-indicator" id="ptrIndicator">
   <span class="ptr-spin">↻</span> AKTUALISIEREN...
@@ -1164,16 +1192,50 @@ async function submitReport() {
   toast('⚠ STÖRUNG GEMELDET', d.name + ' · Schweregrad: ' + sevLabel(selectedSev), 'red');
 }
 
+let pendingResolveId = null;
+
+function openResolveConfirm(faultId) {
+  pendingResolveId = faultId;
+  const f = faultLog.find(x => x.id === faultId);
+  const d = DEVICES.find(x => x.id === f?.device_id);
+  document.getElementById('resolveModalDevice').textContent = (d?.name || f?.device_id || '—') + ' · ' + fmtDT(f?.created_at);
+  document.getElementById('resolveComment').value = '';
+  // Close detail modal if open
+  closeModal('detailModal');
+  openModal('resolveModal');
+}
+
+async function confirmResolve() {
+  if (!pendingResolveId) return;
+  const btn = document.getElementById('resolveConfirmBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>WIRD BEHOBEN...';
+  const comment = document.getElementById('resolveComment').value.trim();
+  await resolveFault(pendingResolveId, comment);
+  btn.disabled = false;
+  btn.innerHTML = '✓ JA, STÖRUNG BEHEBEN';
+  pendingResolveId = null;
+  closeModal('resolveModal');
+}
+
 async function resolveDevice(deviceId) {
   const fault = getActiveFault(deviceId);
   if (!fault) return;
-  await resolveFault(fault.id);
+  openResolveConfirm(fault.id);
 }
 
-async function resolveLog(faultId) { await resolveFault(faultId); }
+async function resolveLog(faultId) {
+  openResolveConfirm(faultId);
+}
 
-async function resolveFault(faultId) {
-  const update = { resolved:true, resolved_at:new Date().toISOString(), resolved_by_name: currentProfile?.full_name || currentUser?.email || 'Unbekannt' };
+async function resolveFault(faultId, comment) {
+  const resolvedBy = currentProfile?.full_name || currentUser?.email || 'Unbekannt';
+  const note = comment ? ` — Lösung: ${comment}` : '';
+  const update = {
+    resolved: true,
+    resolved_at: new Date().toISOString(),
+    resolved_by_name: resolvedBy + note,
+  };
   if (sb) {
     await sb.from('faults').update(update).eq('id', faultId);
   } else {
@@ -1181,7 +1243,7 @@ async function resolveFault(faultId) {
     if (f) Object.assign(f, update);
   }
   await refreshAll();
-  toast('✓ STÖRUNG BEHOBEN','Erfolgreich als behoben markiert.','green');
+  toast('✓ STÖRUNG BEHOBEN', 'Erfolgreich als behoben markiert.', 'green');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1281,7 +1343,7 @@ function openDetail(faultId) {
   `;
   const footer = document.getElementById('detailFooter');
   footer.innerHTML = `<button class="btn-cancel" onclick="closeModal('detailModal')">SCHLIESSEN</button>
-    ${!f.resolved&&canUserReport()?`<button class="btn-submit btn-submit-blue" onclick="resolveLog('${f.id}');closeModal('detailModal')">✓ ALS BEHOBEN MARKIEREN</button>`:''}`;
+    ${!f.resolved&&canUserReport()?`<button class="btn-submit" style="background:var(--green);color:#000;flex:2" onclick="openResolveConfirm('${f.id}')">✓ ALS BEHOBEN MARKIEREN</button>`:''}`;
   openModal('detailModal');
 }
 
