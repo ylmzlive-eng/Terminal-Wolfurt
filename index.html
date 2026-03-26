@@ -319,7 +319,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 }
 .mobile-nav-item.active { color: var(--accent); }
 .mobile-nav-item.active .mobile-nav-icon { filter: drop-shadow(0 0 4px var(--accent)); }
-.mobile-nav-icon { font-size: 22px; line-height: 1; }
+.mobile-nav-icon { width: 24px; height: 24px; line-height: 1; display: block; }
 
 /* MOBILE HEADER */
 .mobile-header {
@@ -381,7 +381,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
     height: 100%;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
   }
 
   /* Cards full width */
@@ -506,7 +506,7 @@ select.form-input { cursor:pointer; }
         <div class="sb-label">Navigation</div>
         <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="nav-icon">▦</span> Dashboard</div>
         <div class="nav-item" onclick="showPage('log')" id="nav-log"><span class="nav-icon">≡</span> Störungslog</div>
-        <div class="nav-item admin-only" onclick="showPage('members')" id="nav-members">Mitglieder</div>
+        <div class="nav-item admin-only" onclick="showPage('members')" id="nav-members"><span class="nav-icon">👥</span> Mitglieder</div>
       </div>
       <div class="sb-section">
         <div class="sb-label">Systemstatus</div>
@@ -660,7 +660,7 @@ select.form-input { cursor:pointer; }
         <select class="form-input" id="mRole">
           <option value="admin">Administrator</option>
           <option value="technician">Kranfahrer & Staplerfahrer</option>
-          <option value="viewer">Betrachter — nur Ansicht</option>
+          <option value="viewer">Lademeister</option>
         </select>
       </div>
     </div>
@@ -680,12 +680,15 @@ select.form-input { cursor:pointer; }
 <nav class="mobile-nav" id="mobileNav">
   <div class="mobile-nav-inner">
     <button class="mobile-nav-item active" id="mnav-dashboard" onclick="showPage('dashboard')">
-      <span class="mobile-nav-icon">▦</span>Dashboard
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
     </button>
     <button class="mobile-nav-item" id="mnav-log" onclick="showPage('log')">
-      <span class="mobile-nav-icon">≡</span>Störungslog
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+      Störungslog
     </button>
     <button class="mobile-nav-item admin-only" id="mnav-members" onclick="showPage('members')">
+      <svg class="mobile-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Mitglieder
     </button>
   </div>
@@ -998,7 +1001,7 @@ function buildDeviceCard(d) {
 
 function canUserReport() {
   const role = currentProfile?.role || 'admin';
-  return role === 'admin' || role === 'technician';
+  return role === 'admin' || role === 'technician' || role === 'viewer';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1244,12 +1247,11 @@ function openDetail(faultId) {
   const f = faultLog.find(x=>x.id===faultId);
   if (!f) return;
   const d = DEVICES.find(x=>x.id===f.device_id);
-  document.getElementById('detailId').textContent = 'Meldung ' + (f.id||'—');
+  document.getElementById('detailId').textContent = '';
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-grid">
       <div class="detail-field"><div class="form-label">Gerät</div><div class="detail-val">${d?.name||f.device_id}<br><span class="muted">${d?.location||''}</span></div></div>
       <div class="detail-field"><div class="form-label">Zeitstempel</div><div class="detail-val">${fmtDT(f.created_at)}</div></div>
-      <div class="detail-field"><div class="form-label">Schweregrad</div><div class="detail-val"><span class="sev-tag sev-${f.severity}">${sevLabel(f.severity)}</span></div></div>
       <div class="detail-field"><div class="form-label">Gemeldet von</div><div class="detail-val">${f.reported_by_name||'—'}</div></div>
     </div>
     <div class="form-label" style="margin-bottom:7px">Störungsbeschreibung</div>
@@ -1289,10 +1291,11 @@ function renderMembers() {
   const grid = document.getElementById('membersGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  const adminMembers = members.filter(m => m.role === 'admin');
-  if (!adminMembers.length) { grid.innerHTML = '<div class="empty-state">Keine Administratoren gefunden</div>'; return; }
-  adminMembers.forEach(m => {
+  const isAdmin = (currentProfile?.role || 'admin') === 'admin';
+  if (!members.length) { grid.innerHTML = '<div class="empty-state">Keine Mitglieder gefunden</div>'; return; }
+  members.forEach(m => {
     const initials = (m.full_name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const roleClass = m.role === 'admin' ? 'role-admin' : m.role === 'technician' ? 'role-technician' : 'role-viewer';
     const card = document.createElement('div');
     card.className = 'member-card';
     card.innerHTML = `
@@ -1300,18 +1303,21 @@ function renderMembers() {
       <div style="flex:1">
         <div class="member-name">${m.full_name||'—'}</div>
         <div class="member-email">${m.email||'—'}</div>
-        <div class="member-role role-admin">ADMINISTRATOR</div>
-        <div style="margin-top:4px"><span style="font-family:var(--mono);font-size:9px;color:var(--green)">● VOLLER ZUGRIFF</span></div>
+        <div class="member-role ${roleClass}">${roleLabel(m.role)}</div>
+        <div style="margin-top:4px"><span style="font-family:var(--mono);font-size:9px;color:var(--green)">● AKTIV</span></div>
       </div>
       <div class="member-actions">
-        ${m.id!==currentUser?.id?`<button class="btn-del" onclick="deleteMember('${m.id}')" title="Löschen">🗑</button>`:''}
+        ${isAdmin && m.id!==currentUser?.id?`<button class="btn-del" onclick="deleteMember('${m.id}')" title="Löschen">🗑</button>`:''}
       </div>
     `;
     grid.appendChild(card);
   });
 }
 
-function openAddMember() { openModal('memberModal'); }
+function openAddMember() {
+  if ((currentProfile?.role || 'admin') !== 'admin') { toast('Kein Zugriff','Nur Administratoren dürfen Mitglieder hinzufügen.','red'); return; }
+  openModal('memberModal');
+}
 
 async function submitMember() {
   const name = document.getElementById('mName').value.trim();
@@ -1342,6 +1348,7 @@ async function submitMember() {
 }
 
 async function deleteMember(id) {
+  if ((currentProfile?.role || 'admin') !== 'admin') { toast('Kein Zugriff','Nur Administratoren dürfen Mitglieder entfernen.','red'); return; }
   if (!confirm('Mitglied wirklich entfernen?')) return;
   if (sb) await sb.from('profiles').delete().eq('id', id);
   else members = members.filter(m => m.id !== id);
@@ -1431,7 +1438,7 @@ function startClock() {
 //  UTILS
 // ════════════════════════════════════════════════════════════
 function sevLabel(s){ return {low:'Niedrig',medium:'Mittel',high:'Hoch'}[s]||s; }
-function roleLabel(r){ return {admin:'Administrator', technician:'Kranfahrer & Staplerfahrer', viewer:'Betrachter'}[r]||r; }
+function roleLabel(r){ return {admin:'Administrator', technician:'Kranfahrer & Staplerfahrer', viewer:'Lademeister'}[r]||r; }
 function truncate(s,n){ return s&&s.length>n?s.substring(0,n)+'…':s||''; }
 function fmtDT(iso){ if(!iso)return'—'; const d=new Date(iso); return d.toLocaleDateString('de-AT')+' '+d.toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'}); }
 </script>
