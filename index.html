@@ -652,9 +652,12 @@ select.form-input { cursor:pointer; }
       <button class="btn-close" onclick="closeModal('memberModal')">✕</button>
     </div>
     <div class="modal-body">
+      <div style="background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);padding:11px 14px;font-family:var(--mono);font-size:10px;color:#7eb3f5;line-height:1.7;margin-bottom:18px;">
+        ℹ Der neue Benutzer erhält eine <strong>Einladungs-E-Mail</strong> und kann sich selbst ein Passwort setzen.<br>
+        Das Profil wird automatisch mit der gewählten Rolle angelegt.
+      </div>
       <div class="form-group"><label class="form-label">Vollständiger Name *</label><input type="text" class="form-input" id="mName" placeholder="Max Mustermann"></div>
       <div class="form-group"><label class="form-label">E-Mail Adresse *</label><input type="email" class="form-input" id="mEmail" placeholder="max@firma.at"></div>
-      <div class="form-group"><label class="form-label">Passwort *</label><input type="password" class="form-input" id="mPassword" placeholder="Mindestens 8 Zeichen"></div>
       <div class="form-group">
         <label class="form-label">Rolle</label>
         <select class="form-input" id="mRole">
@@ -666,7 +669,7 @@ select.form-input { cursor:pointer; }
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('memberModal')">ABBRECHEN</button>
-      <button class="btn-submit btn-submit-blue" id="memberSubmitBtn" onclick="submitMember()">MITGLIED ANLEGEN</button>
+      <button class="btn-submit btn-submit-blue" id="memberSubmitBtn" onclick="submitMember()">EINLADUNG SENDEN</button>
     </div>
   </div>
 </div>
@@ -781,12 +784,18 @@ window.addEventListener('load', async () => {
       currentUser = session.user;
       await loadProfile();
       if (!currentProfile) {
-        // Profil existiert nicht — automatisch anlegen
+        // Prüfen ob ein vorbereitetes Profil mit dieser E-Mail existiert (ohne Auth-ID)
+        const { data: preProfile } = await sb.from('profiles').select('*').eq('email', currentUser.email).is('id', null).maybeSingle();
+        const assignedRole = preProfile?.role || 'viewer';
+        const assignedName = preProfile?.full_name || currentUser.email;
+        if (preProfile) {
+          await sb.from('profiles').delete().eq('email', currentUser.email).is('id', null);
+        }
         await sb.from('profiles').upsert([{
           id: currentUser.id,
-          full_name: currentUser.email,
+          full_name: assignedName,
           email: currentUser.email,
-          role: 'admin'
+          role: assignedRole
         }]);
         await loadProfile();
       }
@@ -846,11 +855,20 @@ async function doLogin() {
   currentUser = data.user;
   await loadProfile();
   if (!currentProfile) {
+    // Prüfen ob ein vorbereitetes Profil mit dieser E-Mail existiert (ohne Auth-ID)
+    const { data: preProfile } = await sb.from('profiles').select('*').eq('email', currentUser.email).is('id', null).maybeSingle();
+    const assignedRole = preProfile?.role || 'viewer';
+    const assignedName = preProfile?.full_name || currentUser.email;
+
+    // Altes Profil ohne ID löschen und neues mit Auth-ID anlegen
+    if (preProfile) {
+      await sb.from('profiles').delete().eq('email', currentUser.email).is('id', null);
+    }
     await sb.from('profiles').upsert([{
       id: currentUser.id,
-      full_name: currentUser.email,
+      full_name: assignedName,
       email: currentUser.email,
-      role: 'admin'
+      role: assignedRole
     }]);
     await loadProfile();
   }
@@ -876,9 +894,9 @@ async function logout() {
 async function loadProfile() {
   if (!sb || !currentUser) return;
   try {
-    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    const { data, error } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
     if (error) console.error('loadProfile error:', error);
-    currentProfile = data;
+    currentProfile = data || null;
   } catch(e) { console.error('loadProfile exception:', e); }
 }
 
@@ -1322,29 +1340,51 @@ function openAddMember() {
 async function submitMember() {
   const name = document.getElementById('mName').value.trim();
   const email = document.getElementById('mEmail').value.trim();
-  const pass = document.getElementById('mPassword').value;
   const role = document.getElementById('mRole').value;
-  if (!name||!email||!pass) { toast('Fehler','Bitte alle Pflichtfelder ausfüllen.','red'); return; }
-  if (pass.length < 8) { toast('Fehler','Passwort muss mindestens 8 Zeichen haben.','red'); return; }
+  if (!name || !email) { toast('Fehler','Bitte Name und E-Mail ausfüllen.','red'); return; }
 
   const btn = document.getElementById('memberSubmitBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>ERSTELLEN...';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>SENDEN...';
 
   if (!sb) {
     members.push({ id: Date.now()+'', full_name:name, email, role });
     closeModal('memberModal'); renderMembers();
-    toast('✓ MITGLIED ANGELEGT', name + ' wurde hinzugefügt.', 'green');
-    btn.disabled=false; btn.innerHTML='MITGLIED ANLEGEN'; return;
+    toast('✓ EINLADUNG GESENDET', name + ' wurde eingeladen.', 'green');
+    btn.disabled=false; btn.innerHTML='EINLADUNG SENDEN'; return;
   }
 
-  // Create user via Supabase admin (requires service role in production)
-  // For now insert profile directly (user must be created via Supabase dashboard or edge function)
-  const { error } = await sb.from('profiles').insert([{ full_name:name, email, role }]);
-  btn.disabled=false; btn.innerHTML='MITGLIED ANLEGEN';
-  if (error) { toast('Fehler', 'Benutzer muss zuerst im Supabase Dashboard angelegt werden. Dann Profil hier speichern.','red'); return; }
+  // Sende Einladungs-E-Mail über Supabase Auth
+  const { data, error } = await sb.auth.signInWithOtp({
+    email: email,
+    options: {
+      shouldCreateUser: true,
+      data: { full_name: name, role: role }
+    }
+  });
+
+  btn.disabled=false; btn.innerHTML='EINLADUNG SENDEN';
+
+  if (error) {
+    toast('Fehler', 'Einladung konnte nicht gesendet werden: ' + error.message, 'red');
+    return;
+  }
+
+  // Profil in profiles-Tabelle vorab anlegen (wird überschrieben wenn User sich einloggt)
+  // Wir suchen zuerst ob User bereits existiert
+  const { data: existing } = await sb.from('profiles').select('id').eq('email', email).maybeSingle();
+  if (!existing) {
+    // Profil ohne Auth-ID anlegen (wird bei erstem Login verknüpft via Trigger)
+    await sb.from('profiles').insert([{ full_name: name, email: email, role: role }]).select();
+  } else {
+    // Rolle aktualisieren falls Profil schon da
+    await sb.from('profiles').update({ full_name: name, role: role }).eq('email', email);
+  }
+
   closeModal('memberModal');
+  document.getElementById('mName').value = '';
+  document.getElementById('mEmail').value = '';
   await loadMembers(); renderMembers();
-  toast('✓ MITGLIED ANGELEGT', name + ' wurde hinzugefügt.', 'green');
+  toast('✓ EINLADUNGS-LINK GESENDET', name + ' hat einen Magic-Link per E-Mail erhalten. Nach dem ersten Login ist das Profil aktiv.', 'green');
 }
 
 async function deleteMember(id) {
