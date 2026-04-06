@@ -22,6 +22,7 @@
   --green: #22c55e;
   --red: #ef4444;
   --yellow: #f59e0b;
+  --warning: #f59e0b;
   --blue: #3b82f6;
   --text: #e8eaf0;
   --text2: #8892a4;
@@ -118,11 +119,14 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .device-card:hover { transform:translateY(-2px); }
 .device-card.ok { border-color:var(--green); background:linear-gradient(135deg, rgba(34,197,94,.25) 0%, rgba(34,197,94,.08) 50%, var(--surface) 100%); box-shadow: 0 0 32px rgba(34,197,94,.3), inset 0 0 32px rgba(34,197,94,.05); }
 .device-card.fault { border-color:var(--red); background:linear-gradient(135deg, rgba(239,68,68,.25) 0%, rgba(239,68,68,.08) 50%, var(--surface) 100%); animation:faultAnim 3s infinite; }
+.device-card.warning { border-color:var(--warning); background:linear-gradient(135deg, rgba(245,158,11,.25) 0%, rgba(245,158,11,.08) 50%, var(--surface) 100%); animation:warnAnim 3s infinite; }
+@keyframes warnAnim { 0%,100%{box-shadow:0 0 24px rgba(245,158,11,.3), inset 0 0 32px rgba(245,158,11,.05)}50%{box-shadow:0 0 48px rgba(245,158,11,.55), inset 0 0 32px rgba(245,158,11,.08)} }
 @keyframes faultAnim { 0%,100%{box-shadow:0 0 24px rgba(239,68,68,.3), inset 0 0 32px rgba(239,68,68,.05)}50%{box-shadow:0 0 48px rgba(239,68,68,.55), inset 0 0 32px rgba(239,68,68,.08)} }
 .dc-head { padding:16px 16px 12px; display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); position:relative; }
 .dc-status-bar { position:absolute; top:0; left:0; right:0; height:5px; border-radius:0; }
 .dc-status-bar.ok { background:var(--green); box-shadow:0 0 20px var(--green), 0 0 40px rgba(34,197,94,.6); height:6px; }
 .dc-status-bar.fault { background:var(--red); box-shadow:0 0 20px var(--red), 0 0 40px rgba(239,68,68,.6); height:6px; animation:pulse 1.5s infinite; }
+.dc-status-bar.warning { background:var(--warning); box-shadow:0 0 20px var(--warning), 0 0 40px rgba(245,158,11,.6); height:6px; animation:pulse 2s infinite; }
 .type-badge { font-family:var(--mono); font-size:9px; letter-spacing:2px; padding:2px 7px; border:1px solid; margin-bottom:5px; display:inline-block; }
 .badge-crane { color:var(--accent); border-color:var(--accent); background:rgba(245,166,35,.07); }
 .badge-kalmar { color:var(--blue); border-color:var(--blue); background:rgba(59,130,246,.07); }
@@ -132,15 +136,19 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .sdot { width:13px; height:13px; border-radius:50%; flex-shrink:0; }
 .sdot-ok { background:var(--green); box-shadow:0 0 16px var(--green), 0 0 32px rgba(34,197,94,.7); }
 .sdot-fault { background:var(--red); box-shadow:0 0 16px var(--red), 0 0 32px rgba(239,68,68,.7); animation:pulse 1.5s infinite; }
+.sdot-warning { background:var(--warning); box-shadow:0 0 16px var(--warning), 0 0 32px rgba(245,158,11,.7); animation:pulse 2s infinite; }
 .dc-body { padding:12px 16px; }
 .dc-row { display:flex; justify-content:space-between; margin-bottom:7px; font-family:var(--mono); font-size:10px; }
 .dc-row:last-child { margin-bottom:0; }
 .dk { color:var(--text2); }
 .dv { color:var(--text); font-weight:500; }
 .fault-banner { background:rgba(239,68,68,.1); border-top:1px solid rgba(239,68,68,.25); padding:9px 16px; font-family:var(--mono); font-size:10px; color:var(--red); display:flex; gap:7px; align-items:flex-start; }
+.warning-banner { background:rgba(245,158,11,.1); border-top:1px solid rgba(245,158,11,.25); padding:9px 16px; font-family:var(--mono); font-size:10px; color:var(--warning); display:flex; gap:7px; align-items:flex-start; }
 .dc-actions { padding:9px 16px; border-top:1px solid var(--border); display:flex; gap:8px; }
 .btn-report-sm { flex:1; background:none; border:1px solid var(--red); color:var(--red); padding:7px; font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; transition:background .15s; }
 .btn-report-sm:hover { background:rgba(239,68,68,.1); }
+.btn-warn-sm { flex:1; background:none; border:1px solid var(--warning); color:var(--warning); padding:7px; font-family:var(--mono); font-size:10px; letter-spacing:1px; cursor:pointer; transition:background .15s; }
+.btn-warn-sm:hover { background:rgba(245,158,11,.1); }
 .btn-resolve-sm { flex:1; background:none; border:1px solid var(--green); color:var(--green); padding:7px; font-family:var(--mono); font-size:10px; cursor:pointer; transition:background .15s; }
 .btn-resolve-sm:hover { background:rgba(34,197,94,.1); }
 
@@ -158,6 +166,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 /* MOBILE LOG CARDS */
 .log-card { background:var(--surface); border:1px solid var(--border); padding:14px 16px; margin-bottom:10px; position:relative; }
 .log-card.open { border-left:3px solid var(--red); }
+.log-card.open-warning { border-left:3px solid var(--warning); }
 .log-card.resolved { border-left:3px solid var(--green); }
 .log-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
 .log-card-device { font-family:var(--display); font-size:16px; letter-spacing:1px; }
@@ -249,6 +258,7 @@ header { background:var(--surface); border-bottom:2px solid var(--border); paddi
 .detail-photo:hover { border-color:var(--accent); }
 .status-box { padding:12px 14px; font-family:var(--mono); font-size:11px; margin-bottom:16px; border:1px solid; }
 .status-box.open { color:var(--red); border-color:rgba(239,68,68,.3); background:rgba(239,68,68,.06); }
+.status-box.open-warning { color:var(--warning); border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.06); }
 .status-box.resolved { color:var(--green); border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.06); }
 
 /* SPINNER */
@@ -513,6 +523,7 @@ select.form-input { cursor:pointer; }
         <div class="sb-stats">
           <div class="sb-stat"><span class="sb-key">Geräte gesamt</span><span class="sb-val">6</span></div>
           <div class="sb-stat"><span class="sb-key">In Betrieb</span><span class="sb-val" style="color:var(--green)" id="sb-ok">—</span></div>
+          <div class="sb-stat"><span class="sb-key">Warnungen</span><span class="sb-val" style="color:var(--yellow)" id="sb-warnings">—</span></div>
           <div class="sb-stat"><span class="sb-key">Aktive Störungen</span><span class="sb-val" style="color:var(--red)" id="sb-faults">—</span></div>
           <div class="sb-stat"><span class="sb-key">Gesamt Meldungen</span><span class="sb-val" style="color:var(--text2)" id="sb-total-log">—</span></div>
         </div>
@@ -530,9 +541,10 @@ select.form-input { cursor:pointer; }
         <div class="page-title">DASHBOARD</div>
         <div class="page-sub">Echtzeit-Übersicht · automatische Aktualisierung alle 30 Sekunden</div>
         <div id="setupBanner"></div>
-        <div class="stats-row">
+        <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
           <div class="stat-card s-blue"><div class="stat-num" style="color:var(--blue)">6</div><div class="stat-desc">Geräte gesamt</div></div>
           <div class="stat-card s-green"><div class="stat-num" style="color:var(--green)" id="d-ok">—</div><div class="stat-desc">In Betrieb</div></div>
+          <div class="stat-card s-orange" style="--accent:var(--yellow)"><div class="stat-num" style="color:var(--yellow)" id="d-warnings">—</div><div class="stat-desc">Warnungen</div></div>
           <div class="stat-card s-red"><div class="stat-num" style="color:var(--red)" id="d-faults">—</div><div class="stat-desc">Aktive Störungen</div></div>
           <div class="stat-card s-orange"><div class="stat-num" style="color:var(--accent)" id="d-resolved">—</div><div class="stat-desc">Behobene Störungen</div></div>
         </div>
@@ -558,7 +570,8 @@ select.form-input { cursor:pointer; }
           </select>
           <select class="log-filter" id="logStatus" onchange="renderLog()">
             <option value="">Alle Status</option>
-            <option value="open">Offen</option>
+            <option value="open">Offen (Störung)</option>
+            <option value="open-warning">Offen (Warnung)</option>
             <option value="resolved">Behoben</option>
           </select>
         </div>
@@ -599,16 +612,24 @@ select.form-input { cursor:pointer; }
   <div class="modal">
     <div class="modal-top-bar"></div>
     <div class="modal-header">
-      <div><div class="modal-title">STÖRUNG MELDEN</div><div class="modal-sub" id="reportDeviceName">—</div></div>
+      <div><div class="modal-title" id="reportModalTitle">MELDUNG EINREICHEN</div><div class="modal-sub" id="reportDeviceName">—</div></div>
       <button class="btn-close" onclick="closeModal('reportModal')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Störungsbeschreibung *</label>
+        <label class="form-label">Meldungsart *</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+          <button id="typeBtn-fault" onclick="setReportType('fault',this)" style="padding:10px 8px;border:1px solid var(--red);background:rgba(239,68,68,.12);color:var(--red);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;font-weight:600">⛔ STÖRUNG</button>
+          <button id="typeBtn-warning" onclick="setReportType('warning',this)" style="padding:10px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s">⚠ WARNUNG</button>
+        </div>
+        <div id="reportTypeHint" style="font-family:var(--mono);font-size:9px;color:var(--red);letter-spacing:1px;margin-top:4px">Störung: Gerät kann nicht verwendet werden</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Beschreibung *</label>
         <textarea class="form-input" id="faultDesc" placeholder="Beschreiben Sie die Störung detailliert: Was ist aufgetreten? Seit wann? Welche Auswirkungen hat die Störung?"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Fotos der Störung</label>
+        <label class="form-label">Fotos</label>
         <div class="upload-area" id="uploadArea">
           <input type="file" accept="image/*" multiple onchange="handlePhotos(event)" id="photoInput">
           <div class="upload-icon">📷</div>
@@ -623,7 +644,7 @@ select.form-input { cursor:pointer; }
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('reportModal')">ABBRECHEN</button>
-      <button class="btn-submit" id="reportSubmitBtn" onclick="submitReport()">STÖRUNG EINREICHEN</button>
+      <button class="btn-submit" id="reportSubmitBtn" onclick="submitReport()">MELDUNG EINREICHEN</button>
     </div>
   </div>
 </div>
@@ -667,6 +688,27 @@ select.form-input { cursor:pointer; }
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('memberModal')">ABBRECHEN</button>
       <button class="btn-submit btn-submit-blue" id="memberSubmitBtn" onclick="submitMember()">MITGLIED ANLEGEN</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESOLVE PICKER MODAL (when multiple active entries exist) -->
+<div class="modal-overlay" id="resolvePickerModal">
+  <div class="modal">
+    <div class="modal-top-bar" style="background:linear-gradient(90deg,var(--warning),var(--green))"></div>
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">MELDUNG AUSWÄHLEN</div>
+        <div class="modal-sub" id="resolvePickerDevice">—</div>
+      </div>
+      <button class="btn-close" onclick="closeModal('resolvePickerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text2);margin-bottom:14px;letter-spacing:1px">Dieses Gerät hat mehrere aktive Meldungen. Welche möchten Sie beheben?</div>
+      <div id="resolvePickerBody"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('resolvePickerModal')">ABBRECHEN</button>
     </div>
   </div>
 </div>
@@ -781,6 +823,7 @@ let faultLog = [];
 let members = [];
 let selectedDevice = null;
 let selectedSev = 'medium';
+let selectedReportType = 'fault';
 let uploadedPhotos = [];
 
 // ════════════════════════════════════════════════════════════
@@ -987,8 +1030,9 @@ function showPage(name) {
 async function loadFaults() {
   if (!sb) {
     faultLog = [
-      { id:'F-001', device_id:'KRN-01', created_at:new Date().toISOString(), severity:'high', description:'Hydraulikdruckabfall am Hauptzylinder.', reported_by_name:'Demo Techniker', immediate_action:'Gerät stillgelegt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
-      { id:'F-002', device_id:'KCH-02', created_at:new Date(Date.now()-86400000).toISOString(), severity:'medium', description:'Geräusch im Antriebsstrang bei Volllast.', reported_by_name:'Demo Admin', immediate_action:'Last auf 50% begrenzt', photos:[], resolved:true, resolved_at:new Date().toISOString(), resolved_by_name:'Demo Admin' },
+      { id:'F-001', device_id:'KRN-01', fault_type:'fault', created_at:new Date().toISOString(), severity:'high', description:'Hydraulikdruckabfall am Hauptzylinder.', reported_by_name:'Demo Techniker', immediate_action:'Gerät stillgelegt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
+      { id:'F-002', device_id:'KCH-02', fault_type:'warning', created_at:new Date(Date.now()-3600000).toISOString(), severity:'medium', description:'Leichtes Geräusch im Antriebsstrang bei Volllast — Gerät noch verwendbar.', reported_by_name:'Demo Techniker', immediate_action:'Last auf 80% begrenzt', photos:[], resolved:false, resolved_at:null, resolved_by_name:null },
+      { id:'F-003', device_id:'KCH-03', fault_type:'fault', created_at:new Date(Date.now()-86400000).toISOString(), severity:'medium', description:'Geräusch im Antriebsstrang bei Volllast.', reported_by_name:'Demo Admin', immediate_action:'Last auf 50% begrenzt', photos:[], resolved:true, resolved_at:new Date().toISOString(), resolved_by_name:'Demo Admin' },
     ];
     return;
   }
@@ -1002,8 +1046,15 @@ async function loadFaults() {
 // ════════════════════════════════════════════════════════════
 //  FAULTS — DEVICE CARDS
 // ════════════════════════════════════════════════════════════
+function getActiveFaults(deviceId) { return faultLog.filter(f => f.device_id === deviceId && !f.resolved); }
 function getActiveFault(deviceId) { return faultLog.find(f => f.device_id === deviceId && !f.resolved) || null; }
 function hasFault(deviceId) { return !!getActiveFault(deviceId); }
+function getDeviceStatus(deviceId) {
+  const active = getActiveFaults(deviceId);
+  if (!active.length) return 'ok';
+  if (active.some(f => f.fault_type === 'fault' || !f.fault_type)) return 'fault';
+  return 'warning';
+}
 
 function renderDevices() {
   const grid = document.getElementById('dash-grid');
@@ -1012,15 +1063,36 @@ function renderDevices() {
 }
 
 function buildDeviceCard(d) {
-  const fault = getActiveFault(d.id);
+  const activeFaults = getActiveFaults(d.id);
+  const status = getDeviceStatus(d.id);
   const canReport = canUserReport();
   const card = document.createElement('div');
-  card.className = 'device-card' + (fault ? ' fault' : ' ok');
+  card.className = 'device-card ' + status;
 
-  const dotClass = fault ? 'sdot-fault' : 'sdot-ok';
-  const statusText = fault ? 'STÖRUNG' : 'IN BETRIEB';
-  const statusColor = fault ? 'var(--red)' : 'var(--green)';
-  const barClass = fault ? 'fault' : 'ok';
+  let dotClass, statusText, statusColor, barClass;
+  if (status === 'fault') {
+    dotClass = 'sdot-fault'; statusText = 'STÖRUNG'; statusColor = 'var(--red)'; barClass = 'fault';
+  } else if (status === 'warning') {
+    dotClass = 'sdot-warning'; statusText = 'WARNUNG'; statusColor = 'var(--warning)'; barClass = 'warning';
+  } else {
+    dotClass = 'sdot-ok'; statusText = 'IN BETRIEB'; statusColor = 'var(--green)'; barClass = 'ok';
+  }
+
+  // Build banners for all active entries
+  let banners = '';
+  activeFaults.forEach(f => {
+    const isWarn = f.fault_type === 'warning';
+    banners += `<div class="${isWarn ? 'warning-banner' : 'fault-banner'}">${isWarn ? '⚠' : '⛔'} ${truncate(f.description, 65)}</div>`;
+  });
+
+  // Actions: always show report button; show resolve only if there are active entries
+  let actions = '';
+  if (canReport) {
+    actions = `<div class="dc-actions">
+      <button class="btn-report-sm" onclick="openReportModal('${d.id}')">＋ MELDUNG</button>
+      ${activeFaults.length ? `<button class="btn-resolve-sm" onclick="resolveDevice('${d.id}')">✓ BEHEBEN</button>` : ''}
+    </div>`;
+  }
 
   card.innerHTML = `
     <div class="dc-head">
@@ -1034,11 +1106,8 @@ function buildDeviceCard(d) {
         <div class="sdot ${dotClass}"></div>${statusText}
       </div>
     </div>
-    ${fault ? `<div class="fault-banner">⚠ ${truncate(fault.description,70)}</div>` : ''}
-    ${canReport ? `<div class="dc-actions">
-      ${!fault ? `<button class="btn-report-sm" onclick="openReportModal('${d.id}')">＋ STÖRUNG MELDEN</button>` : ''}
-      ${fault ? `<button class="btn-resolve-sm" onclick="resolveDevice('${d.id}')">✓ STÖRUNG BEHEBEN</button>` : ''}
-    </div>` : ''}
+    ${banners}
+    ${actions}
   `;
   return card;
 }
@@ -1055,13 +1124,38 @@ function openReportModal(deviceId) {
   if (!canUserReport()) { toast('Kein Zugriff','Ihre Rolle erlaubt keine Störungsmeldungen.','red'); return; }
   selectedDevice = deviceId;
   selectedSev = 'medium';
+  selectedReportType = 'fault';
   uploadedFiles = [];
   const d = DEVICES.find(x => x.id === deviceId);
   document.getElementById('reportDeviceName').textContent = d.name + ' · ' + d.id;
   document.getElementById('faultDesc').value = '';
   document.getElementById('faultAction').value = '';
   document.getElementById('photoPreviews').innerHTML = '';
+  // Reset type buttons
+  setReportType('fault', document.getElementById('typeBtn-fault'));
   openModal('reportModal');
+}
+
+function setReportType(type, btn) {
+  selectedReportType = type;
+  const faultBtn = document.getElementById('typeBtn-fault');
+  const warnBtn = document.getElementById('typeBtn-warning');
+  const hint = document.getElementById('reportTypeHint');
+  const submitBtn = document.getElementById('reportSubmitBtn');
+  // Reset both
+  faultBtn.style.cssText = 'padding:10px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s';
+  warnBtn.style.cssText = 'padding:10px 8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s';
+  if (type === 'fault') {
+    faultBtn.style.cssText = 'padding:10px 8px;border:1px solid var(--red);background:rgba(239,68,68,.12);color:var(--red);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;font-weight:600';
+    hint.style.color = 'var(--red)';
+    hint.textContent = 'Störung: Gerät kann nicht / eingeschränkt verwendet werden';
+    submitBtn.style.background = 'var(--red)';
+  } else {
+    warnBtn.style.cssText = 'padding:10px 8px;border:1px solid var(--warning);background:rgba(245,158,11,.12);color:var(--warning);font-family:var(--mono);font-size:11px;letter-spacing:1px;cursor:pointer;transition:all .15s;font-weight:600';
+    hint.style.color = 'var(--warning)';
+    hint.textContent = 'Warnung: Gerät ist in Betrieb, aber mit Einschränkungen / zu beobachten';
+    submitBtn.style.background = 'var(--warning)';
+  }
 }
 
 function setSev(sev, el) {
@@ -1153,6 +1247,7 @@ async function submitReport() {
 
   const entry = {
     device_id: selectedDevice,
+    fault_type: selectedReportType,
     severity: selectedSev,
     description: desc,
     immediate_action: document.getElementById('faultAction').value.trim(),
@@ -1166,7 +1261,7 @@ async function submitReport() {
 
   if (sb) {
     const { data, error } = await sb.from('faults').insert([entry]).select().single();
-    if (error) { toast('Fehler','Konnte nicht gespeichert werden: ' + error.message,'red'); btn.disabled=false; btn.innerHTML='STÖRUNG EINREICHEN'; return; }
+    if (error) { toast('Fehler','Konnte nicht gespeichert werden: ' + error.message,'red'); btn.disabled=false; btn.innerHTML='MELDUNG EINREICHEN'; return; }
 
     if (uploadedFiles.length > 0) {
       btn.innerHTML = '<span class="spinner"></span>FOTOS HOCHLADEN...';
@@ -1185,11 +1280,12 @@ async function submitReport() {
   uploadedFiles = [];
   uploadedPhotos = [];
   btn.disabled = false;
-  btn.innerHTML = 'STÖRUNG EINREICHEN';
+  btn.innerHTML = 'MELDUNG EINREICHEN';
   closeModal('reportModal');
   await refreshAll();
   const d = DEVICES.find(x => x.id === selectedDevice);
-  toast('⚠ STÖRUNG GEMELDET', d.name + ' · Schweregrad: ' + sevLabel(selectedSev), 'red');
+  const isWarn = selectedReportType === 'warning';
+  toast(isWarn ? '⚠ WARNUNG GEMELDET' : '⛔ STÖRUNG GEMELDET', d.name + ' · ' + (isWarn ? 'Gerät bleibt in Betrieb' : 'Schweregrad: ' + sevLabel(selectedSev)), isWarn ? 'orange' : 'red');
 }
 
 let pendingResolveId = null;
@@ -1219,9 +1315,31 @@ async function confirmResolve() {
 }
 
 async function resolveDevice(deviceId) {
-  const fault = getActiveFault(deviceId);
-  if (!fault) return;
-  openResolveConfirm(fault.id);
+  const actives = getActiveFaults(deviceId);
+  if (!actives.length) return;
+  if (actives.length === 1) {
+    openResolveConfirm(actives[0].id);
+  } else {
+    // Multiple active: open a picker
+    openResolvePickerModal(deviceId, actives);
+  }
+}
+
+function openResolvePickerModal(deviceId, actives) {
+  const d = DEVICES.find(x => x.id === deviceId);
+  const body = document.getElementById('resolvePickerBody');
+  body.innerHTML = actives.map(f => {
+    const isWarn = f.fault_type === 'warning';
+    const col = isWarn ? 'var(--warning)' : 'var(--red)';
+    const icon = isWarn ? '⚠' : '⛔';
+    return `<div style="border:1px solid ${col};background:${isWarn?'rgba(245,158,11,.06)':'rgba(239,68,68,.06)'};padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:opacity .15s" onclick="closeModal('resolvePickerModal');openResolveConfirm('${f.id}')">
+      <div style="font-family:var(--mono);font-size:9px;color:${col};letter-spacing:1px;margin-bottom:5px">${icon} ${isWarn ? 'WARNUNG' : 'STÖRUNG'} · ${fmtDT(f.created_at)}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.5">${truncate(f.description, 90)}</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px">von ${f.reported_by_name||'—'}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('resolvePickerDevice').textContent = (d?.name || deviceId) + ' · Meldung auswählen';
+  openModal('resolvePickerModal');
 }
 
 async function resolveLog(faultId) {
@@ -1243,7 +1361,7 @@ async function resolveFault(faultId, comment) {
     if (f) Object.assign(f, update);
   }
   await refreshAll();
-  toast('✓ STÖRUNG BEHOBEN', 'Erfolgreich als behoben markiert.', 'green');
+  toast('✓ MELDUNG BEHOBEN', 'Erfolgreich als behoben markiert.', 'green');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1256,7 +1374,11 @@ function renderLog() {
 
   let filtered = faultLog.filter(f => {
     const str = (f.device_id+f.description+f.reported_by_name+f.id).toLowerCase();
-    return (!search||str.includes(search)) && (!devF||f.device_id===devF) && (!statF||(statF==='open'?!f.resolved:f.resolved));
+    const statusMatch = !statF ||
+      (statF === 'open' ? (!f.resolved && f.fault_type !== 'warning') :
+       statF === 'open-warning' ? (!f.resolved && f.fault_type === 'warning') :
+       statF === 'resolved' ? f.resolved : true);
+    return (!search||str.includes(search)) && (!devF||f.device_id===devF) && statusMatch;
   });
 
   const tbody = document.getElementById('logBody');
@@ -1281,7 +1403,12 @@ function renderLog() {
         <td style="width:0;min-width:0"><div style="max-height:60px;overflow-y:auto;padding-right:4px;line-height:1.5;color:var(--text2);font-size:11px;scrollbar-width:thin;scrollbar-color:var(--border) transparent">${f.description}</div></td>
         <td style="white-space:nowrap;width:130px">${f.reported_by_name||'—'}</td>
         <td style="text-align:center;width:60px">${f.photos?.length?`<span style="color:var(--accent)">📷 ${f.photos.length}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
-        <td style="width:90px">${f.resolved?`<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`:`<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">● OFFEN</span>`}</td>
+        <td style="width:90px">${f.resolved
+          ? `<span style="color:var(--green);font-size:9px;letter-spacing:1px">✓ BEHOBEN</span>`
+          : f.fault_type === 'warning'
+            ? `<span style="color:var(--warning);font-size:9px;letter-spacing:1px;animation:pulse 2s infinite">⚠ WARNUNG</span>`
+            : `<span style="color:var(--red);font-size:9px;letter-spacing:1px;animation:pulse 1.5s infinite">⛔ STÖRUNG</span>`
+        }</td>
         <td style="width:110px"><div style="display:flex;gap:5px;flex-wrap:nowrap">
           <button class="btn-detail" onclick="openDetail('${f.id}')">Details</button>
           ${!f.resolved&&canUserReport()?`<button class="btn-res-log" onclick="resolveLog('${f.id}')">✓</button>`:''}
@@ -1297,12 +1424,14 @@ function renderLog() {
     filtered.forEach(f => {
       const d = DEVICES.find(x=>x.id===f.device_id);
       const card = document.createElement('div');
-      card.className = 'log-card ' + (f.resolved ? 'resolved' : 'open');
+      card.className = 'log-card ' + (f.resolved ? 'resolved' : f.fault_type === 'warning' ? 'open-warning' : 'open');
+      const statusColor = f.resolved ? 'var(--green)' : f.fault_type === 'warning' ? 'var(--warning)' : 'var(--red)';
+      const statusLabel = f.resolved ? '✓ BEHOBEN' : f.fault_type === 'warning' ? '⚠ WARNUNG' : '⛔ STÖRUNG';
       card.innerHTML = `
         <div class="log-card-top">
           <div class="log-card-device">${d?.name||f.device_id}</div>
-          <div class="log-card-status" style="color:${f.resolved?'var(--green)':'var(--red)'}">
-            ${f.resolved ? '✓ BEHOBEN' : '● OFFEN'}
+          <div class="log-card-status" style="color:${statusColor}">
+            ${statusLabel}
           </div>
         </div>
         <div class="log-card-desc">${f.description}</div>
@@ -1335,8 +1464,12 @@ function openDetail(faultId) {
     <div class="form-label" style="margin-bottom:7px">Störungsbeschreibung</div>
     <div class="detail-desc">${f.description}</div>
     ${f.immediate_action?`<div class="form-label" style="margin-bottom:7px">Sofortmaßnahmen</div><div class="detail-desc">${f.immediate_action}</div>`:''}
-    <div class="status-box ${f.resolved?'resolved':'open'}">
-      ${f.resolved?`✓ BEHOBEN am ${fmtDT(f.resolved_at)} durch ${f.resolved_by_name||'—'}`:`⚠ STATUS: OFFEN — Störung wurde noch nicht behoben`}
+    <div class="status-box ${f.resolved ? 'resolved' : f.fault_type === 'warning' ? 'open-warning' : 'open'}">
+      ${f.resolved
+        ? `✓ BEHOBEN am ${fmtDT(f.resolved_at)} durch ${f.resolved_by_name||'—'}`
+        : f.fault_type === 'warning'
+          ? `⚠ WARNUNG: Gerät in Betrieb mit Einschränkungen — noch nicht behoben`
+          : `⛔ STÖRUNG: Noch nicht behoben`}
     </div>
     <div class="form-label" style="margin-bottom:8px">Fotos (${f.photos?.length||0})</div>
     ${f.photos?.length?`<div class="detail-photos">${f.photos.map(p=>`<img src="${p}" class="detail-photo" onclick="window.open('${p}','_blank')" title="Klicken zum Vergrößern">`).join('')}</div>`:`<div style="font-family:var(--mono);font-size:11px;color:var(--text3)">Keine Fotos vorhanden</div>`}
@@ -1485,16 +1618,23 @@ async function deleteMember(id) {
 //  STATS
 // ════════════════════════════════════════════════════════════
 function updateStats() {
-  const active = DEVICES.filter(d=>hasFault(d.id)).length;
-  const ok = DEVICES.length - active;
+  let faultDevices = 0, warnDevices = 0, okDevices = 0;
+  DEVICES.forEach(d => {
+    const s = getDeviceStatus(d.id);
+    if (s === 'fault') faultDevices++;
+    else if (s === 'warning') warnDevices++;
+    else okDevices++;
+  });
   const resolved = faultLog.filter(f=>f.resolved).length;
   const total = faultLog.length;
-  document.getElementById('d-ok').textContent = ok;
-  document.getElementById('d-faults').textContent = active;
-  document.getElementById('d-resolved').textContent = resolved;
-  document.getElementById('sb-ok').textContent = ok;
-  document.getElementById('sb-faults').textContent = active;
-  document.getElementById('sb-total-log').textContent = total;
+  if (document.getElementById('d-ok')) document.getElementById('d-ok').textContent = okDevices;
+  if (document.getElementById('d-warnings')) document.getElementById('d-warnings').textContent = warnDevices;
+  if (document.getElementById('d-faults')) document.getElementById('d-faults').textContent = faultDevices;
+  if (document.getElementById('d-resolved')) document.getElementById('d-resolved').textContent = resolved;
+  if (document.getElementById('sb-ok')) document.getElementById('sb-ok').textContent = okDevices;
+  if (document.getElementById('sb-warnings')) document.getElementById('sb-warnings').textContent = warnDevices;
+  if (document.getElementById('sb-faults')) document.getElementById('sb-faults').textContent = faultDevices;
+  if (document.getElementById('sb-total-log')) document.getElementById('sb-total-log').textContent = total;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1504,7 +1644,9 @@ function toast(title, body, type='red') {
   const w = document.getElementById('alertWrap');
   const el = document.createElement('div');
   el.className = `toast t-${type}`;
-  el.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  const color = type === 'green' ? 'var(--green)' : type === 'orange' ? 'var(--warning)' : 'var(--red)';
+  el.style.borderLeftColor = color;
+  el.innerHTML = `<div class="toast-title" style="color:${color}">${title}</div><div class="toast-body">${body}</div>`;
   w.prepend(el);
   setTimeout(()=>el.remove(), 6000);
 }
